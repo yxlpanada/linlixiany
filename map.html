@@ -32,7 +32,7 @@
         <div id="list"></div>
     </div>
     <script>
-        const API = new URLSearchParams(location.search).get('api') || window.__API_BASE__ || '';
+        const API = new URLSearchParams(location.search).get('api') || window.__API_BASE__ || 'https://linliji.onrender.com';
         const qs = new URLSearchParams(location.search);
         const cid = qs.get('community_id') || 1;
 

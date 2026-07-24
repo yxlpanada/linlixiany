@@ -158,7 +158,7 @@
 <div id="app"></div>
 <script>
 /* ================= API 层 ================= */
-const API = new URLSearchParams(location.search).get('api') || window.__API_BASE__ || '';
+const API = new URLSearchParams(location.search).get('api') || window.__API_BASE__ || 'https://linliji.onrender.com';
 let token = localStorage.getItem('ll2_token') || '';
 async function api(path, method = 'GET', body) {
   const r = await fetch(API + path, {

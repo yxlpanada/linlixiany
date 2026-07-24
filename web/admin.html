@@ -47,7 +47,7 @@
 <body>
 <div id="root"></div>
 <script>
-const API = new URLSearchParams(location.search).get('api') || window.__API_BASE__ || '';
+const API = new URLSearchParams(location.search).get('api') || window.__API_BASE__ || 'https://linliji.onrender.com';
 let token = localStorage.getItem('ll2_admin') || '';
 let page = 'dash';
 const $ = document.getElementById('root');
