@@ -3,12 +3,11 @@
 services:
   - type: web
     name: linliji
-    rootDir: server
+    rootDir: .
     runtime: docker
+    dockerfilePath: ./Dockerfile
     plan: free
     healthCheckPath: /api/communities
     envVars:
       - key: HOST
         value: 0.0.0.0
-      - key: PORT
-        sync: false

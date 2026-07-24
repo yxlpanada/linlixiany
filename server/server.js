@@ -6,8 +6,10 @@ const crypto = require('crypto');
 const db = require('./db');
 const { sms, wechat, realname } = require('./providers');
 
-const PORT = +(process.env.PORT || 3399);
-const WEB = path.join(__dirname, '..', 'web');
+// Render 会注入 $PORT；本地默认 3000
+const PORT = +(process.env.PORT || 3000);
+const WEB = process.env.WEB_DIR
+  || (fs.existsSync(path.join(__dirname, 'web')) ? path.join(__dirname, 'web') : path.join(__dirname, '..', 'web'));
 const now = () => Date.now();
 const uid = () => crypto.randomBytes(16).toString('hex');
 
@@ -428,7 +430,8 @@ const server = http.createServer(async (req, res) => {
 
   /* 静态文件 */
   let fp = path.join(WEB, url.pathname === '/' ? 'index.html' : url.pathname);
-  if (!fp.startsWith(WEB)) { res.writeHead(403); return res.end(); }
+  const base = path.resolve(WEB);
+  if (!path.resolve(fp).startsWith(base)) { res.writeHead(403); return res.end(); }
   if (!fs.existsSync(fp) || fs.statSync(fp).isDirectory()) fp = path.join(WEB, 'index.html');
   res.writeHead(200, { 'Content-Type': (MIME[path.extname(fp)] || 'application/octet-stream') + '; charset=utf-8' });
   fs.createReadStream(fp).pipe(res);

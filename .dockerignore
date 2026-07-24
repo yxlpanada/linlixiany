@@ -1,0 +1,10 @@
+# 不要打进镜像
+*.db
+linli.db
+.env
+.env.*
+node_modules
+.git
+.workbuddy
+**/.workbuddy
+clipboard-images
