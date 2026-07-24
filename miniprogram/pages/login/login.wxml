@@ -1,0 +1,21 @@
+<view class="login">
+  <view class="logo">🏘️</view>
+  <view class="brand">邻里集</view>
+  <view class="sub">小区闲置 · 邻里流转</view>
+
+  <view class="tabs">
+    <view class="tab {{mode==='code'?'on':''}}" data-m="code" bindtap="switchMode">验证码</view>
+    <view class="tab {{mode==='pwd'?'on':''}}" data-m="pwd" bindtap="switchMode">密码</view>
+  </view>
+
+  <input class="input" type="number" placeholder="请输入手机号" value="{{phone}}" bindinput="onPhone" maxlength="11"/>
+  <view wx:if="{{mode==='code'}}" class="flex row">
+    <input class="input code" type="number" placeholder="验证码" value="{{code}}" bindinput="onCode" maxlength="6"/>
+    <button class="btn code-btn" disabled="{{counting>0}}" bindtap="sendCode">{{counting>0?counting+'s':'获取验证码'}}</button>
+  </view>
+  <input wx:if="{{mode==='pwd' || mode==='code'}}" class="input" password placeholder="密码（注册时至少6位）" value="{{pwd}}" bindinput="onPwd"/>
+
+  <button class="btn" bindtap="submit">{{mode==='code'?'登录 / 注册':'登录'}}</button>
+  <button class="btn ghost wx" bindtap="wechatLogin">微信一键登录</button>
+  <view class="tip" wx:if="{{devCode}}">开发模式验证码：{{devCode}}（正式环境由短信下发）</view>
+</view>

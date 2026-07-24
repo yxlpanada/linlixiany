@@ -1,0 +1,8 @@
+.chat { padding: 24rpx; }
+.row { display: flex; margin-bottom: 20rpx; }
+.row.me { justify-content: flex-end; }
+.bubble { max-width: 70%; background: #fff; padding: 18rpx 24rpx; border-radius: 16rpx; font-size: 28rpx; line-height: 1.5; }
+.row.me .bubble { background: #07c160; color: #fff; }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 16rpx; padding: 16rpx 24rpx; background: #fff; box-shadow: 0 -4rpx 16rpx rgba(0,0,0,.06); }
+.bar .input { flex: 1; background: #f4f5f7; border-radius: 999rpx; padding: 16rpx 24rpx; font-size: 28rpx; }
+.sm { padding: 12rpx 30rpx; font-size: 26rpx; margin: 0; }

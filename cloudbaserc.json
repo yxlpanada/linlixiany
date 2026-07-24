@@ -1,0 +1,25 @@
+{
+  "envId": "{{你的云开发环境ID}}",
+  "framework": {
+    "name": "linliji",
+    "plugins": {
+      "container": {
+        "use": "@cloudbase/framework-plugin-container",
+        "inputs": {
+          "name": "linliji",
+          "path": "/",
+          "container": {
+            "build": {
+              "dockerfile": "server/Dockerfile",
+              "context": "."
+            },
+            "run": {
+              "command": "node --experimental-sqlite --no-warnings server/server.js",
+              "ports": 3000
+            }
+          }
+        }
+      }
+    }
+  }
+}

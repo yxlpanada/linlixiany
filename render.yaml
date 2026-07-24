@@ -1,0 +1,14 @@
+# Render.com 一键部署配置
+# 在 Render 导入本仓库后，按此配置创建 Web Service 即可。
+services:
+  - type: web
+    name: linliji
+    rootDir: server
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/communities
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        sync: false

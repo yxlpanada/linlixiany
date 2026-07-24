@@ -1,0 +1,13 @@
+{
+  "name": "linliji-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "邻里集 · 小区闲置交换平台后端 (Node + node:sqlite，零第三方依赖)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --experimental-sqlite --no-warnings server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

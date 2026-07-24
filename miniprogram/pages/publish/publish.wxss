@@ -1,0 +1,10 @@
+.row { display: flex; gap: 16rpx; margin: 16rpx 0; }
+.sel { flex: 1; background: #f4f5f7; border-radius: 12rpx; padding: 18rpx; font-size: 26rpx; text-align: center; }
+.deals { display: flex; gap: 14rpx; margin: 16rpx 0; }
+.deal { flex: 1; text-align: center; padding: 18rpx 0; border-radius: 12rpx; background: #f4f5f7; font-size: 26rpx; color: #666; }
+.deal.on { background: #07c160; color: #fff; font-weight: 600; }
+.imgs { display: flex; flex-wrap: wrap; gap: 16rpx; margin: 16rpx 0; }
+.img { width: 150rpx; height: 150rpx; border-radius: 12rpx; position: relative; overflow: hidden; }
+.img image { width: 100%; height: 100%; }
+.img .del { position: absolute; top: 0; right: 6rpx; color: #fff; font-size: 36rpx; }
+.img.add { background: #f4f5f7; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 60rpx; }

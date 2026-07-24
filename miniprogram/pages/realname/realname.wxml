@@ -1,0 +1,17 @@
+<view class="card form">
+  <view class="field"><text class="lbl">真实姓名</text><input class="input" placeholder="与身份证一致" value="{{name}}" bindinput="onName"/></view>
+  <view class="field"><text class="lbl">身份证号</text><input class="input" placeholder="18位身份证号" value="{{idcard}}" bindinput="onId" maxlength="18"/></view>
+  <view class="field"><text class="lbl">所在小区</text>
+    <picker mode="selector" range="{{communities}}" range-key="name" bindchange="pickCommunity">
+      <view class="picker">{{cname || '请选择小区'}}</view>
+    </picker>
+  </view>
+  <view class="row3">
+    <input class="input" placeholder="楼栋" value="{{building}}" bindinput="onB"/>
+    <input class="input" placeholder="单元" value="{{unit}}" bindinput="onU"/>
+    <input class="input" placeholder="房号" value="{{room}}" bindinput="onR"/>
+  </view>
+  <button class="btn ghost" bindtap="ocr">📷 拍照识别身份证（OCR）</button>
+  <button class="btn" bindtap="submit">提交实名认证</button>
+  <view class="tip">仅同小区实名邻居可入驻；信息脱敏展示，保障隐私。</view>
+</view>

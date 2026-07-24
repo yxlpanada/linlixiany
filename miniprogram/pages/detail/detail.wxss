@@ -1,0 +1,8 @@
+.hero { width: 100%; height: 480rpx; background: #eee; }
+.desc { color: #555; font-size: 28rpx; line-height: 1.6; }
+.seller .title { font-size: 30rpx; }
+.line { color: #ff5000; font-weight: 600; margin: 8rpx 0; }
+.offer { padding: 18rpx 0; border-bottom: 1rpx solid #eef0f2; }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 16rpx 24rpx; background: #fff; box-shadow: 0 -4rpx 16rpx rgba(0,0,0,.06); display: flex; gap: 16rpx; }
+.flex1 { flex: 1; }
+.sm { padding: 12rpx 24rpx; font-size: 26rpx; margin: 0; }

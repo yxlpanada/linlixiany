@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>邻里集 · 多小区管理后台</title>
+<style>
+  :root{--green:#20a26a;--green-d:#178257;--green-l:#e7f6ee;--bg:#f4f6f5;--ink:#1f2a2e;--muted:#6b7a80;--line:#e8ebe9;--shadow:0 4px 18px rgba(20,40,30,.07)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#178257,#27b579)}
+  .login-card{background:#fff;border-radius:18px;padding:36px 32px;width:360px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+  .login-card h1{font-size:20px;margin-bottom:4px}
+  .login-card p{font-size:13px;color:var(--muted);margin-bottom:22px}
+  .input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14px;outline:none;margin-bottom:12px;background:#fafbfb}
+  .input:focus{border-color:var(--green)}
+  .btn{border:none;border-radius:10px;padding:12px 18px;font-size:14px;font-weight:600;cursor:pointer;background:var(--green);color:#fff}
+  .btn.w{width:100%}
+  .btn.sm{padding:6px 12px;font-size:12px;border-radius:8px}
+  .btn.line{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+  .btn.red{background:#ef4444}
+  .layout{display:flex;min-height:100vh}
+  .side{width:210px;background:#14342a;color:#cfe3da;padding:20px 0;flex-shrink:0;display:flex;flex-direction:column}
+  .side .logo{padding:0 22px 20px;font-size:17px;font-weight:700;color:#fff}
+  .nav{flex:1}
+  .nav div{padding:13px 22px;cursor:pointer;font-size:14px;display:flex;gap:10px;align-items:center}
+  .nav div:hover{background:rgba(255,255,255,.06)}
+  .nav div.on{background:var(--green);color:#fff;font-weight:600}
+  .side .foot{padding:16px 22px;font-size:12px;opacity:.6;cursor:pointer}
+  .main{flex:1;padding:26px 30px;overflow-x:auto}
+  .main h2{font-size:19px;margin-bottom:18px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
+  .stat{background:#fff;border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .stat .n{font-size:26px;font-weight:800;color:var(--green-d)}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:4px}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);font-size:13px}
+  th{background:#f0f4f2;text-align:left;padding:11px 14px;font-size:12px;color:var(--muted);white-space:nowrap}
+  td{padding:11px 14px;border-top:1px solid var(--line);vertical-align:middle}
+  .tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:12px}
+  .tag.g{background:var(--green-l);color:var(--green-d)}
+  .tag.y{background:#fef3e2;color:#b45309}
+  .tag.gray{background:#eee;color:#666}
+  .bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+  .toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:99}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const API = new URLSearchParams(location.search).get('api') || window.__API_BASE__ || '';
+let token = localStorage.getItem('ll2_admin') || '';
+let page = 'dash';
+const $ = document.getElementById('root');
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),1800);}
+const esc=s=>(''+(s??'')).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dt=t=>t?new Date(t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'-';
+async function api(p,m='GET',b){
+  const r=await fetch(API+p,{method:m,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:b?JSON.stringify(b):undefined});
+  const j=await r.json();
+  if(r.status===401||r.status===403){token='';localStorage.removeItem('ll2_admin');render();throw new Error('auth');}
+  if(!j.ok){toast(j.msg||'失败');throw new Error(j.msg);}
+  return j.data;
+}
+const val=id=>document.getElementById(id)?.value.trim()||'';
+
+async function render(){
+  if(!token){
+    $.innerHTML=`<div class="login-wrap"><div class="login-card">
+      <h1>🏘️ 邻里集 · 管理后台</h1><p>多小区运营管理系统</p>
+      <input class="input" id="ac" placeholder="管理员账号" value="admin"/>
+      <input class="input" id="pw" type="password" placeholder="密码" value="admin123"/>
+      <button class="btn w" id="go">登录</button>
+      <p style="font-size:11px;color:var(--muted);margin-top:12px;text-align:center">演示账号已预填 admin / admin123</p>
+    </div></div>`;
+    document.getElementById('go').onclick=async()=>{
+      const r=await api('/api/admin/login','POST',{account:val('ac'),pwd:val('pw')});
+      token=r.token;localStorage.setItem('ll2_admin',token);render();
+    };
+    return;
+  }
+  const NAV=[['dash','📊 数据看板'],['com','🏘️ 小区管理'],['user','👥 用户 & 实名'],['item','📦 物品管理'],['pp','📍 自提点管理'],['rv','⭐ 评价管理'],['log','🛡️ 实名核验日志']];
+  const pages={dash,com,user,item,pp,rv,log};
+  $.innerHTML=`<div class="layout">
+    <div class="side"><div class="logo">🏘️ 邻里集后台</div>
+      <div class="nav">${NAV.map(([k,t])=>`<div class="${page===k?'on':''}" data-p="${k}">${t}</div>`).join('')}</div>
+      <div class="foot" id="lo">⎋ 退出登录</div></div>
+    <div class="main" id="main">加载中…</div></div>`;
+  document.querySelectorAll('[data-p]').forEach(d=>d.onclick=()=>{page=d.dataset.p;render();});
+  document.getElementById('lo').onclick=()=>{token='';localStorage.removeItem('ll2_admin');render();};
+  document.getElementById('main').innerHTML=await pages[page]();
+  bindPage();
+}
+
+async function dash(){
+  const s=await api('/api/admin/stats');
+  const S=(n,l)=>`<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  return `<h2>📊 数据看板</h2>
+  <div class="cards">${S(s.communities,'入驻小区')}${S(s.users,'注册用户')}${S(s.verified,'已实名')}${S(s.items,'累计物品')}${S(s.onSale,'在售')}${S(s.deals,'成交单')}${S(s.reviews,'评价数')}${S(s.msgs,'私信数')}</div>
+  <h2 style="font-size:15px">各小区运营数据</h2>
+  <table><tr><th>ID</th><th>小区</th><th>用户数</th><th>物品数</th><th>成交数</th></tr>
+  ${s.byCommunity.map(c=>`<tr><td>${c.id}</td><td><b>${esc(c.name)}</b></td><td>${c.users}</td><td>${c.items}</td><td>${c.deals}</td></tr>`).join('')}</table>`;
+}
+async function com(){
+  const cs=await api('/api/admin/communities');
+  return `<h2>🏘️ 小区管理</h2>
+  <div class="bar"><input class="input" id="c-name" placeholder="小区名称" style="width:200px;margin:0"/>
+    <input class="input" id="c-addr" placeholder="地址" style="width:260px;margin:0"/>
+    <button class="btn" id="c-add">+ 新增小区</button></div>
+  <table><tr><th>ID</th><th>名称</th><th>地址</th><th>创建时间</th></tr>
+  ${cs.map(c=>`<tr><td>${c.id}</td><td><b>${esc(c.name)}</b></td><td>${esc(c.address)}</td><td>${dt(c.created_at)}</td></tr>`).join('')}</table>`;
+}
+async function user(){
+  const us=await api('/api/admin/users');
+  return `<h2>👥 用户 & 实名管理</h2>
+  <table><tr><th>ID</th><th>手机/昵称</th><th>实名</th><th>小区/住址</th><th>信用分</th><th>注册时间</th><th>操作</th></tr>
+  ${us.map(u=>`<tr><td>${u.id}</td><td>${esc(u.phone||'微信用户')}<br/><span style="color:var(--muted)">${esc(u.nickname)}</span></td>
+    <td>${u.verified?`<span class="tag g">✓ ${esc(u.name)}</span>`:'<span class="tag y">未实名</span>'}</td>
+    <td>${esc(u.community||'-')}<br/><span style="color:var(--muted)">${u.building?u.building+'栋'+u.unit+'单元'+u.room:''}</span></td>
+    <td><b style="color:${u.credit<60?'#ef4444':'var(--green-d)'}">${u.credit}</b></td><td>${dt(u.created_at)}</td>
+    <td><button class="btn sm line" data-cr="${u.id}" data-d="5">+5分</button> <button class="btn sm line" data-cr="${u.id}" data-d="-5">-5分</button></td></tr>`).join('')}</table>`;
+}
+async function item(){
+  const its=await api('/api/admin/items');
+  const st=s=>s==='on'?'<span class="tag g">在售</span>':s==='done'?'<span class="tag gray">已成交</span>':'<span class="tag y">已下架</span>';
+  return `<h2>📦 物品管理</h2>
+  <table><tr><th>ID</th><th>标题</th><th>小区</th><th>发布人</th><th>方式</th><th>价格</th><th>状态</th><th>浏览</th><th>操作</th></tr>
+  ${its.map(i=>`<tr><td>${i.id}</td><td><b>${esc(i.title)}</b></td><td>${esc(i.community||'-')}</td><td>${esc(i.owner_name||'-')}</td>
+    <td>${i.deal==='bid'?'💰出价':i.deal==='swap'?'🔄换物':'🎁赠送'}</td><td>${i.price||'-'}</td><td>${st(i.status)}</td><td>${i.views}</td>
+    <td>${i.status==='on'?`<button class="btn sm red" data-ioff="${i.id}">违规下架</button>`:''}</td></tr>`).join('')}</table>`;
+}
+async function pp(){
+  const [ps,cs]=await Promise.all([api('/api/admin/pickup-points'),api('/api/admin/communities')]);
+  return `<h2>📍 自提点管理</h2>
+  <div class="bar">
+    <select class="input" id="p-com" style="width:160px;margin:0">${cs.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
+    <input class="input" id="p-name" placeholder="自提点名称" style="width:170px;margin:0"/>
+    <input class="input" id="p-desc" placeholder="说明（值守时间等）" style="width:220px;margin:0"/>
+    <input class="input" id="p-lat" placeholder="纬度(选填)" style="width:110px;margin:0"/>
+    <input class="input" id="p-lng" placeholder="经度(选填)" style="width:110px;margin:0"/>
+    <button class="btn" id="p-add">+ 新增</button></div>
+  <table><tr><th>ID</th><th>小区</th><th>名称</th><th>说明</th><th>坐标</th><th>操作</th></tr>
+  ${ps.map(p=>`<tr><td>${p.id}</td><td>${esc(p.community||'')}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.descr)}</td>
+    <td style="color:var(--muted)">${p.lat?p.lat.toFixed(4)+', '+p.lng.toFixed(4):'-'}</td>
+    <td><button class="btn sm red" data-pdel="${p.id}">删除</button></td></tr>`).join('')}</table>
+  <p style="font-size:12px;color:var(--muted);margin-top:10px">💡 坐标使用 GCJ-02（国测局）坐标系；配置坐标后可在实景地图页查看点位分布。</p>`;
+}
+async function rv(){
+  const rs=await api('/api/admin/reviews');
+  return `<h2>⭐ 评价管理</h2>
+  <table><tr><th>ID</th><th>评价人</th><th>被评人</th><th>星级</th><th>标签</th><th>评语</th><th>时间</th></tr>
+  ${rs.map(r=>`<tr><td>${r.id}</td><td>${esc(r.from_name||'-')}</td><td>${esc(r.to_name||'-')}</td>
+    <td>${'⭐'.repeat(r.stars)}</td><td>${JSON.parse(r.tags||'[]').map(t=>`<span class="tag g">${esc(t)}</span>`).join(' ')}</td>
+    <td>${esc(r.comment||'-')}</td><td>${dt(r.created_at)}</td></tr>`).join('')||''}</table>
+  ${rs.length?'':'<p style="color:var(--muted);font-size:13px;margin-top:10px">暂无评价数据</p>'}`;
+}
+async function log(){
+  const ls=await api('/api/admin/realname-logs');
+  return `<h2>🛡️ 实名核验日志（OCR + 公安接口）</h2>
+  <table><tr><th>ID</th><th>用户ID</th><th>姓名</th><th>身份证(脱敏)</th><th>通道</th><th>核验结果</th><th>时间</th></tr>
+  ${ls.map(l=>`<tr><td>${l.id}</td><td>${l.user_id}</td><td>${esc(l.name)}</td><td>${esc(l.idcard)}</td>
+    <td>${esc(l.ocr_provider)}</td><td>${l.passed?'<span class="tag g">✓ 通过</span>':'<span class="tag y">✗ 未通过</span>'} ${esc(l.police_result)}</td>
+    <td>${dt(l.created_at)}</td></tr>`).join('')||''}</table>
+  ${ls.length?'':'<p style="color:var(--muted);font-size:13px;margin-top:10px">暂无核验记录</p>'}`;
+}
+
+function bindPage(){
+  const ca=document.getElementById('c-add');
+  if(ca)ca.onclick=async()=>{await api('/api/admin/communities','POST',{name:val('c-name'),address:val('c-addr')});toast('已新增小区');render();};
+  document.querySelectorAll('[data-cr]').forEach(b=>b.onclick=async()=>{
+    await api('/api/admin/users/'+b.dataset.cr+'/credit','POST',{delta:+b.dataset.d});toast('信用分已调整');render();});
+  document.querySelectorAll('[data-ioff]').forEach(b=>b.onclick=async()=>{
+    await api('/api/admin/items/'+b.dataset.ioff+'/off','POST',{});toast('已下架');render();});
+  const pa=document.getElementById('p-add');
+  if(pa)pa.onclick=async()=>{
+    await api('/api/admin/pickup-points','POST',{community_id:val('p-com'),name:val('p-name'),descr:val('p-desc'),lat:val('p-lat'),lng:val('p-lng')});
+    toast('已新增自提点');render();};
+  document.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=async()=>{
+    await api('/api/admin/pickup-points/'+b.dataset.pdel+'/delete','POST',{});toast('已删除');render();});
+}
+render();
+</script>
+</body>
+</html>

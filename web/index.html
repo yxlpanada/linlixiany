@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>邻里集 · 小区闲置交换平台</title>
+<style>
+  :root{
+    --green:#20a26a; --green-d:#178257; --green-l:#e7f6ee;
+    --amber:#f59e0b; --amber-l:#fef3e2;
+    --blue:#3b82f6; --blue-l:#e8f1fe;
+    --bg:#f3f5f4; --card:#fff;
+    --ink:#1f2a2e; --muted:#6b7a80; --line:#eceeed;
+    --shadow:0 6px 22px rgba(20,40,30,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:#dfe4e2;color:var(--ink);display:flex;justify-content:center;align-items:center;min-height:100vh}
+  #app{width:100%;max-width:430px;height:100vh;max-height:920px;background:var(--bg);position:relative;
+    overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.22);border-radius:26px;display:flex;flex-direction:column}
+  @media (max-width:460px){#app{border-radius:0;max-height:none;height:100vh}}
+  .topbar{background:linear-gradient(135deg,var(--green),#27b579);color:#fff;padding:14px 18px 12px;
+    flex-shrink:0;display:flex;align-items:center;gap:10px;position:relative;z-index:5}
+  .topbar .loc{font-size:12px;opacity:.9}
+  .topbar h1{font-size:17px;font-weight:700;margin-top:2px}
+  .topbar .title-wrap{flex:1;min-width:0}
+  .back-btn{cursor:pointer;font-size:22px;line-height:1;padding-right:2px}
+  .screen{flex:1;overflow-y:auto;padding-bottom:80px;-webkit-overflow-scrolling:touch}
+  .screen::-webkit-scrollbar{width:0}
+  .tabbar{position:absolute;left:0;right:0;bottom:0;height:64px;background:#fff;border-top:1px solid var(--line);
+    display:flex;z-index:10;padding-bottom:env(safe-area-inset-bottom)}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    color:var(--muted);font-size:11px;cursor:pointer;position:relative}
+  .tab.active{color:var(--green)}
+  .tab .ic{font-size:21px;line-height:1}
+  .tab .pub{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--green),#2bbd7f);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;margin-top:-22px;
+    box-shadow:0 6px 16px rgba(32,162,106,.4);font-weight:300}
+  .badge-dot{position:absolute;top:8px;right:calc(50% - 18px);min-width:16px;height:16px;padding:0 4px;
+    background:#ef4444;color:#fff;border-radius:8px;font-size:10px;line-height:16px;text-align:center}
+  .sec{padding:14px 16px}
+  .card{background:var(--card);border-radius:16px;box-shadow:var(--shadow)}
+  .btn{display:block;width:100%;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;
+    cursor:pointer;background:var(--green);color:#fff;transition:.15s}
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:var(--green-l);color:var(--green-d)}
+  .btn.amber{background:var(--amber)}
+  .btn.line{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+  .btn.sm{padding:9px 14px;font-size:13px;width:auto;border-radius:10px;display:inline-block}
+  .btn.wx{background:#07c160}
+  .input,select,textarea{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;
+    font-size:15px;background:#fafbfb;color:var(--ink);font-family:inherit;outline:none;transition:.15s}
+  .input:focus,select:focus,textarea:focus{border-color:var(--green);background:#fff}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .row2{display:flex;gap:10px}.row2>*{flex:1}
+  .tag{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+  .tag.bid{background:var(--amber-l);color:#b45309}
+  .tag.swap{background:var(--blue-l);color:#1d4ed8}
+  .tag.free{background:var(--green-l);color:var(--green-d)}
+  .tag.done{background:#eee;color:#666}
+  .tag.gray{background:#f1f3f2;color:#788}
+  .muted{color:var(--muted)}.center{text-align:center}
+  .empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:14px}
+  .empty .big{font-size:44px;margin-bottom:10px}
+  .auth-wrap{padding:0;height:100%;display:flex;flex-direction:column;
+    background:linear-gradient(160deg,#20a26a 0%,#27b579 40%,#f3f5f4 40%)}
+  .auth-head{padding:48px 28px 26px;color:#fff}
+  .auth-head .logo{font-size:40px}
+  .auth-head h2{font-size:26px;margin-top:10px}
+  .auth-head p{opacity:.92;margin-top:6px;font-size:13px}
+  .auth-card{margin:0 20px 20px;background:#fff;border-radius:20px;padding:24px 20px;box-shadow:var(--shadow);flex:1;overflow-y:auto}
+  .seg{display:flex;background:#f0f2f1;border-radius:12px;padding:4px;margin-bottom:20px}
+  .seg div{flex:1;text-align:center;padding:9px;border-radius:9px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer}
+  .seg div.on{background:#fff;color:var(--green-d);box-shadow:0 2px 6px rgba(0,0,0,.06)}
+  .item-card{display:flex;gap:12px;padding:12px;margin-bottom:12px;cursor:pointer}
+  .item-thumb{width:92px;height:92px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;
+    justify-content:center;font-size:44px;background:var(--green-l);overflow:hidden}
+  .item-thumb img{width:100%;height:100%;object-fit:cover}
+  .item-info{flex:1;min-width:0;display:flex;flex-direction:column}
+  .item-info .t{font-size:15px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .item-info .meta{font-size:11px;color:var(--muted);margin-top:auto;display:flex;align-items:center;gap:6px}
+  .price{color:#e0453a;font-weight:700}.price .u{font-size:11px}
+  .cats{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px}
+  .cats::-webkit-scrollbar{height:0}
+  .chip{white-space:nowrap;font-size:13px;padding:7px 14px;border-radius:20px;background:#fff;
+    border:1.5px solid var(--line);color:var(--muted);cursor:pointer;flex-shrink:0}
+  .chip.on{background:var(--green);color:#fff;border-color:var(--green)}
+  .search{margin:12px 16px 0;display:flex;align-items:center;gap:8px;background:#fff;border-radius:24px;
+    padding:10px 16px;box-shadow:var(--shadow)}
+  .search input{border:none;background:none;outline:none;flex:1;font-size:14px}
+  .detail-img{width:100%;height:280px;background:var(--green-l);display:flex;align-items:center;justify-content:center;font-size:110px}
+  .detail-img img{width:100%;height:100%;object-fit:cover}
+  .owner{display:flex;align-items:center;gap:10px;padding:14px 16px}
+  .avatar{width:42px;height:42px;border-radius:50%;background:var(--green);color:#fff;display:flex;
+    align-items:center;justify-content:center;font-weight:700;font-size:17px;flex-shrink:0}
+  .verified{font-size:10px;color:var(--green);background:var(--green-l);padding:2px 6px;border-radius:6px;font-weight:600}
+  .actbar{position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);
+    padding:12px 16px;display:flex;gap:10px;padding-bottom:calc(12px + env(safe-area-inset-bottom));z-index:8}
+  .actbar .btn{flex:1}
+  .offer{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
+  .offer:last-child{border-bottom:none}
+  .prof-head{background:linear-gradient(135deg,var(--green),#27b579);padding:24px 20px 40px;color:#fff}
+  .prof-head .row{display:flex;align-items:center;gap:14px}
+  .prof-head .avatar{width:60px;height:60px;font-size:24px;background:rgba(255,255,255,.25)}
+  .prof-stats{display:flex;background:#fff;margin:-24px 16px 0;border-radius:16px;box-shadow:var(--shadow);padding:16px 0}
+  .prof-stats div{flex:1;text-align:center;border-right:1px solid var(--line)}
+  .prof-stats div:last-child{border:none}
+  .prof-stats .n{font-size:20px;font-weight:700;color:var(--green-d)}
+  .prof-stats .l{font-size:11px;color:var(--muted);margin-top:3px}
+  .menu{margin:14px 16px}
+  .menu-item{display:flex;align-items:center;gap:12px;padding:15px 16px;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px}
+  .menu-item:last-child{border:none}
+  .menu-item .ar{margin-left:auto;color:#ccc}
+  .msg-row{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);cursor:pointer;align-items:flex-start}
+  .msg-row .dot{width:9px;height:9px;border-radius:50%;background:#ef4444;flex-shrink:0;margin-top:6px}
+  .msg-row .dot.read{background:transparent}
+  .mask{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;align-items:flex-end;animation:fade .2s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .sheet{background:#fff;width:100%;border-radius:22px 22px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));
+    animation:up .25s;max-height:80%;overflow-y:auto}
+  @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .sheet h3{font-size:17px;margin-bottom:16px;text-align:center}
+  .toast{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.8);
+    color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;z-index:99;animation:fade .2s;max-width:80%;text-align:center}
+  .thumbs{display:flex;gap:8px;flex-wrap:wrap}
+  .thumb-add{width:70px;height:70px;border-radius:12px;border:1.5px dashed var(--line);display:flex;
+    align-items:center;justify-content:center;flex-direction:column;color:var(--muted);font-size:24px;cursor:pointer;background:#fafbfb}
+  .thumb-pick{width:70px;height:70px;border-radius:12px;background:var(--green-l);display:flex;
+    align-items:center;justify-content:center;font-size:34px;cursor:pointer;position:relative;border:2px solid transparent}
+  .thumb-pick.on{border-color:var(--green)}
+  .divider{height:8px;background:var(--bg)}
+  .section-title{font-size:14px;font-weight:700;padding:14px 16px 8px}
+  /* 聊天 */
+  .chat-body{flex:1;overflow-y:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:10px}
+  .bubble{max-width:75%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.5;word-break:break-all}
+  .bubble.me{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:4px}
+  .bubble.peer{align-self:flex-start;background:#fff;box-shadow:var(--shadow);border-bottom-left-radius:4px}
+  .chat-input{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line)}
+  .chat-input input{flex:1;border:1.5px solid var(--line);border-radius:20px;padding:10px 14px;outline:none;font-size:14px}
+  .chat-input button{border:none;background:var(--green);color:#fff;border-radius:20px;padding:0 18px;font-size:14px;font-weight:600;cursor:pointer}
+  /* 星星 */
+  .stars{display:flex;gap:6px;justify-content:center;font-size:32px;cursor:pointer;margin:8px 0 14px}
+  .stars span{filter:grayscale(1);opacity:.4;transition:.1s}
+  .stars span.on{filter:none;opacity:1}
+  .rtags{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px}
+  /* 小区示意图 */
+  .map-box{background:#eef6f1;border-radius:14px;overflow:hidden;position:relative}
+  .pp-row{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);align-items:center;cursor:pointer}
+  .pp-row:last-child{border:none}
+  .pp-row.sel{background:var(--green-l)}
+  .steps{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:18px;font-size:12px;color:var(--muted)}
+  .steps b{color:var(--green-d)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ================= API 层 ================= */
+const API = new URLSearchParams(location.search).get('api') || window.__API_BASE__ || '';
+let token = localStorage.getItem('ll2_token') || '';
+async function api(path, method = 'GET', body) {
+  const r = await fetch(API + path, {
+    method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const j = await r.json().catch(() => ({ ok: false, msg: '网络异常' }));
+  if (r.status === 401) { token = ''; localStorage.removeItem('ll2_token'); state.tab = 'auth'; render(); throw new Error('未登录'); }
+  if (!j.ok) { toast(j.msg || '请求失败'); throw new Error(j.msg); }
+  return j.data;
+}
+
+const CATS=[{id:'digital',name:'数码电器',emoji:'📱'},{id:'home',name:'家居日用',emoji:'🛋️'},{id:'kids',name:'母婴儿童',emoji:'🧸'},
+{id:'book',name:'图书文具',emoji:'📚'},{id:'cloth',name:'服饰鞋包',emoji:'👗'},{id:'kitchen',name:'厨房用品',emoji:'🍳'},
+{id:'sport',name:'运动户外',emoji:'⚽'},{id:'plant',name:'绿植花艺',emoji:'🪴'},{id:'other',name:'其他',emoji:'📦'}];
+const catOf=id=>CATS.find(c=>c.id===id)||CATS[8];
+const timeAgo=t=>{const s=(Date.now()-t)/1000;if(s<60)return'刚刚';if(s<3600)return Math.floor(s/60)+'分钟前';if(s<86400)return Math.floor(s/3600)+'小时前';return Math.floor(s/86400)+'天前';};
+const esc=s=>(''+(s??'')).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ================= 状态 ================= */
+let state={tab:'auth',cat:'all',kw:'',detailId:null,chatPeer:null,me:null,unread:0,communities:[],detail:null};
+const $app=document.getElementById('app');
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;$app.appendChild(t);setTimeout(()=>t.remove(),1800);}
+let sheetEl=null;
+function openSheet(html){closeSheet();const m=document.createElement('div');m.className='mask';
+  m.innerHTML=`<div class="sheet">${html}</div>`;m.onclick=e=>{if(e.target===m)closeSheet();};$app.appendChild(m);sheetEl=m;}
+function closeSheet(){if(sheetEl){sheetEl.remove();sheetEl=null;}}
+const val=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
+
+/* ================= SSE 实时推送 ================= */
+let es=null;
+function connectSSE(){
+  if(es)es.close();
+  if(!token)return;
+  es=new EventSource(API+'/api/events?token='+token);
+  es.addEventListener('message_new',e=>{
+    const d=JSON.parse(e.data);
+    if(state.tab==='chat'&&state.chatPeer===d.from.id){loadChat();}
+    else{toast('💬 '+d.from.nickname+'：'+d.msg.content.slice(0,20));refreshUnread();}
+  });
+  es.addEventListener('offer_new',e=>{const d=JSON.parse(e.data);toast('📨 你的「'+d.title+'」收到新意向');refreshUnread();if(state.tab==='detail')openDetail(state.detailId);});
+  es.addEventListener('offer_update',e=>{const d=JSON.parse(e.data);toast(d.status==='accepted'?'✅ 你的意向被接受了！':'❌ 你的意向被婉拒');refreshUnread();if(state.tab==='detail')openDetail(state.detailId);});
+  es.addEventListener('review_new',()=>toast('⭐ 你收到一条新评价'));
+}
+async function refreshUnread(){
+  try{
+    const ns=await api('/api/notifications');
+    const convs=await api('/api/conversations');
+    state.unread=ns.filter(n=>!n.read&&(n.kind==='out'||n.offer.status==='pending')).length+convs.reduce((s,c)=>s+c.unread,0);
+    const el=document.getElementById('unread-badge');
+    if(el){el.textContent=state.unread;el.style.display=state.unread?'':'none';}
+  }catch(e){}
+}
+
+/* ================= 渲染 ================= */
+async function render(){
+  if(!token){renderAuth();return;}
+  if(!state.me){try{state.me=await api('/api/me');}catch(e){return;}}
+  if(!state.me.verified&&!['realname'].includes(state.tab)){state.tab='realname';}
+  const views={home:viewHome,publish:viewPublish,msg:viewMsg,me:viewMe,detail:viewDetail,mylist:viewMyList,realname:viewRealname,chat:viewChat,deals:viewDeals,pickup:viewPickup};
+  const html=await (views[state.tab]||viewHome)();
+  $app.innerHTML=html+tabbar();
+  bind();
+  if(['home','mylist','msg','me'].includes(state.tab))refreshUnread();
+}
+function tabbar(){
+  if(['detail','chat','realname','auth','pickup'].includes(state.tab))return'';
+  const T=(id,ic,label)=>`<div class="tab ${state.tab===id?'active':''}" data-tab="${id}"><div class="ic">${ic}</div>${label}</div>`;
+  return `<div class="tabbar">
+    ${T('home','🏠','首页')}${T('mylist','🧾','我发布')}
+    <div class="tab" data-tab="publish"><div class="pub">+</div></div>
+    <div class="tab ${state.tab==='msg'?'active':''}" data-tab="msg"><div class="ic">💬</div>消息<span class="badge-dot" id="unread-badge" style="display:${state.unread?'':'none'}">${state.unread}</span></div>
+    ${T('me','👤','我的')}
+  </div>`;
+}
+
+/* ================= 登录/注册 ================= */
+let authMode='login',loginWay='pwd',smsTimer=0;
+function renderAuth(){
+  $app.innerHTML=`
+  <div class="auth-wrap">
+    <div class="auth-head"><div class="logo">🏘️</div><h2>邻里集</h2>
+      <p>小区闲置，就近流转 · 实名邻居，安心交易</p></div>
+    <div class="auth-card">
+      <div class="seg"><div class="${authMode==='login'?'on':''}" data-m="login">登录</div>
+        <div class="${authMode==='reg'?'on':''}" data-m="reg">注册</div></div>
+      <div id="authForm">${authMode==='login'?loginForm():regForm()}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin:18px 0 14px">
+        <div style="flex:1;height:1px;background:var(--line)"></div>
+        <span class="muted" style="font-size:12px">第三方登录</span>
+        <div style="flex:1;height:1px;background:var(--line)"></div></div>
+      <button class="btn wx" id="wx-btn">💚 微信一键登录</button>
+      <p class="muted center" style="font-size:11px;margin-top:12px">登录即代表同意《用户协议》《隐私政策》</p>
+    </div>
+  </div>`;
+  document.querySelectorAll('.seg div').forEach(d=>d.onclick=()=>{authMode=d.dataset.m;renderAuth();});
+  bindAuth();
+}
+function smsBtnHtml(){return `<button class="btn sm ghost" id="sms-btn" style="white-space:nowrap">${smsTimer>0?smsTimer+'s后重发':'获取验证码'}</button>`;}
+function loginForm(){
+  return `
+  <div class="seg" style="margin-bottom:16px">
+    <div class="${loginWay==='pwd'?'on':''}" data-w="pwd">密码登录</div>
+    <div class="${loginWay==='sms'?'on':''}" data-w="sms">验证码登录</div></div>
+  <div class="field"><label>手机号</label><input class="input" id="lg-phone" placeholder="请输入手机号" value="13800000001"/></div>
+  ${loginWay==='pwd'
+    ?`<div class="field"><label>密码</label><input class="input" id="lg-pwd" type="password" value="123456" placeholder="请输入密码"/></div>`
+    :`<div class="field"><label>短信验证码</label><div style="display:flex;gap:8px"><input class="input" id="lg-code" placeholder="6位验证码" maxlength="6"/>${smsBtnHtml()}</div></div>`}
+  <button class="btn" id="lg-btn" style="margin-top:6px">登录</button>
+  <p class="muted center" style="font-size:12px;margin-top:12px">体验账号 13800000001~03 / 密码 123456</p>`;
+}
+function regForm(){
+  return `
+  <div class="field"><label>手机号</label><input class="input" id="rg-phone" placeholder="接收验证码的手机号"/></div>
+  <div class="field"><label>短信验证码</label><div style="display:flex;gap:8px"><input class="input" id="rg-code" placeholder="6位验证码" maxlength="6"/>${smsBtnHtml()}</div></div>
+  <div class="field"><label>设置密码</label><input class="input" id="rg-pwd" type="password" placeholder="6位以上"/></div>
+  <button class="btn" id="rg-btn">注册</button>
+  <p class="muted center" style="font-size:12px;margin-top:12px">注册后需完成实名认证方可交易</p>`;
+}
+function bindAuth(){
+  document.querySelectorAll('[data-w]').forEach(d=>d.onclick=()=>{loginWay=d.dataset.w;renderAuth();});
+  const smsBtn=document.getElementById('sms-btn');
+  if(smsBtn)smsBtn.onclick=async()=>{
+    if(smsTimer>0)return;
+    const phone=val('lg-phone')||val('rg-phone');
+    if(!/^1\d{10}$/.test(phone))return toast('请输入正确的手机号');
+    const r=await api('/api/sms/send','POST',{phone,scene:authMode});
+    toast(r.devCode?`📩 验证码已发送（演示：${r.devCode}）`:'📩 验证码已发送');
+    if(r.devCode){const c=document.getElementById('lg-code')||document.getElementById('rg-code');if(c)c.value=r.devCode;}
+    smsTimer=60;const iv=setInterval(()=>{smsTimer--;const b=document.getElementById('sms-btn');
+      if(b)b.textContent=smsTimer>0?smsTimer+'s后重发':'获取验证码';if(smsTimer<=0)clearInterval(iv);},1000);
+  };
+  const lg=document.getElementById('lg-btn');
+  if(lg)lg.onclick=async()=>{
+    const body=loginWay==='pwd'?{phone:val('lg-phone'),pwd:val('lg-pwd')}:{phone:val('lg-phone'),code:val('lg-code')};
+    const r=await api('/api/auth/login','POST',body);
+    afterLogin(r);
+  };
+  const rg=document.getElementById('rg-btn');
+  if(rg)rg.onclick=async()=>{
+    const r=await api('/api/auth/register','POST',{phone:val('rg-phone'),code:val('rg-code'),pwd:val('rg-pwd')});
+    toast('🎉 注册成功，请完成实名认证');afterLogin(r);
+  };
+  const wx=document.getElementById('wx-btn');
+  if(wx)wx.onclick=()=>{
+    /* 模拟微信 OAuth 授权页 */
+    openSheet(`<h3>💚 微信授权登录</h3>
+      <div class="center" style="font-size:13px;color:var(--muted);margin-bottom:14px">演示环境：模拟微信开放平台 OAuth2 流程<br/>选择一个微信身份完成授权</div>
+      <button class="btn wx" data-wxcode="alice2024" style="margin-bottom:10px">🙋 以「微信用户A」授权</button>
+      <button class="btn wx" data-wxcode="bob2024">🙋‍♂️ 以「微信用户B」授权</button>`);
+    document.querySelectorAll('[data-wxcode]').forEach(b=>b.onclick=async()=>{
+      const r=await api('/api/auth/wechat','POST',{code:b.dataset.wxcode});
+      closeSheet();toast('💚 微信登录成功');afterLogin(r);
+    });
+  };
+}
+function afterLogin(r){
+  token=r.token;localStorage.setItem('ll2_token',token);state.me=null;
+  state.tab=r.needRealname?'realname':'home';
+  connectSSE();render();
+}
+
+/* ================= 实名认证（OCR + 公安核验） ================= */
+let rnOcr={name:'',idcard:'',uploaded:false};
+async function viewRealname(){
+  if(!state.communities.length)state.communities=await api('/api/communities');
+  const opts=(n)=>Array.from({length:n},(_,i)=>`<option>${i+1}</option>`).join('');
+  return `
+  <div class="topbar"><div class="title-wrap"><h1>🛡️ 实名认证</h1></div>
+    <div style="font-size:12px;opacity:.85;cursor:pointer" id="rn-logout">退出</div></div>
+  <div class="screen"><div class="sec">
+    <div class="steps"><b>① 上传身份证</b> → <b>② OCR识别</b> → <b>③ 公安核验</b> → ④ 完成</div>
+    <div class="card" style="padding:18px 16px;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:10px">第一步 · 身份证人像面照片</div>
+      <label class="thumb-add" style="width:100%;height:110px;font-size:34px" id="rn-upbox">
+        ${rnOcr.uploaded?'✅<span style="font-size:12px;margin-top:4px">已上传，OCR识别完成</span>':'🪪<span style="font-size:12px;margin-top:4px">点击上传身份证照片</span>'}
+        <input type="file" accept="image/*" id="rn-file" style="display:none"/>
+      </label>
+      <div class="muted" style="font-size:11px;margin-top:8px">照片仅用于 OCR 识别与公安比对，加密存储不外泄（演示模式：识别结果可人工修正）</div>
+    </div>
+    <div class="card" style="padding:18px 16px;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:10px">第二步 · 确认识别信息</div>
+      <div class="field"><label>真实姓名</label><input class="input" id="rn-name" placeholder="OCR识别后可修正" value="${esc(rnOcr.name)}"/></div>
+      <div class="field" style="margin-bottom:0"><label>身份证号</label><input class="input" id="rn-id" placeholder="18位身份证号" maxlength="18" value="${esc(rnOcr.idcard)}"/></div>
+    </div>
+    <div class="card" style="padding:18px 16px;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:10px">第三步 · 住址信息</div>
+      <div class="field"><label>所在小区</label>
+        <select id="rn-com">${state.communities.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+      <div class="row2">
+        <div class="field"><label>楼栋</label><select id="rn-b">${opts(20)}</select></div>
+        <div class="field"><label>单元</label><select id="rn-u">${opts(6)}</select></div>
+        <div class="field" style="margin-bottom:0"><label>房号</label><input class="input" id="rn-r" placeholder="如 1502"/></div>
+      </div>
+    </div>
+    <button class="btn" id="rn-submit">提交公安实名核验</button>
+    <p class="muted center" style="font-size:11px;margin-top:10px">演示提示：可用 110101198809093366（校验位合法）测试通过</p>
+  </div></div>`;
+}
+function bindRealname(){
+  const f=document.getElementById('rn-file');
+  if(f)f.onchange=async e=>{
+    if(!e.target.files.length)return;
+    const r=new FileReader();
+    r.onload=async()=>{
+      toast('🔍 OCR 识别中…');
+      const o=await api('/api/realname/ocr','POST',{image:r.result.slice(0,100)});
+      rnOcr.uploaded=true;
+      if(o.name){rnOcr.name=o.name;rnOcr.idcard=o.idcard;}
+      toast(o.mock?'✅ 已上传（演示模式请手动确认信息）':'✅ OCR识别完成');
+      render();
+    };
+    r.readAsDataURL(e.target.files[0]);
+  };
+  const s=document.getElementById('rn-submit');
+  if(s)s.onclick=async()=>{
+    rnOcr.name=val('rn-name');rnOcr.idcard=val('rn-id');
+    await api('/api/realname/verify','POST',{name:val('rn-name'),idcard:val('rn-id'),
+      community_id:val('rn-com'),building:val('rn-b'),unit:val('rn-u'),room:val('rn-r')});
+    toast('✅ 公安核验通过，实名认证成功！');
+    state.me=null;state.tab='home';setTimeout(render,800);
+  };
+  const lo=document.getElementById('rn-logout');
+  if(lo)lo.onclick=()=>{token='';localStorage.removeItem('ll2_token');state.me=null;state.tab='auth';render();};
+}
+
+/* ================= 首页 ================= */
+async function viewHome(){
+  const items=await api(`/api/items?cat=${state.cat}&kw=${encodeURIComponent(state.kw)}`);
+  const u=state.me;
+  const chips=[`<div class="chip ${state.cat==='all'?'on':''}" data-cat="all">全部</div>`]
+    .concat(CATS.map(c=>`<div class="chip ${state.cat===c.id?'on':''}" data-cat="${c.id}">${c.emoji} ${c.name}</div>`)).join('');
+  return `
+  <div class="topbar"><div class="title-wrap">
+    <div class="loc">📍 ${esc(u.community?.name||'')} · ${esc(u.building)}栋</div><h1>邻里集市</h1></div>
+    <div style="cursor:pointer;font-size:20px" data-goto="pickup" title="自提点">🗺️</div></div>
+  <div class="screen">
+    <div class="search"><span>🔍</span><input id="kw" placeholder="搜索闲置物品" value="${esc(state.kw)}"/></div>
+    <div class="cats">${chips}</div>
+    <div class="sec">${items.length?items.map(itemCard).join(''):'<div class="empty"><div class="big">📭</div>还没有符合条件的闲置<br/>点击下方 + 发布第一件闲置</div>'}</div>
+  </div>`;
+}
+function dealTag(i){if(i.deal==='bid')return`<span class="tag bid">💰 出价认领</span>`;if(i.deal==='swap')return`<span class="tag swap">🔄 以物换物</span>`;return`<span class="tag free">🎁 免费赠送</span>`;}
+function priceHtml(i){if(i.deal==='bid')return`<span class="price"><span class="u">期望 ¥</span>${i.price}</span>`;
+  if(i.deal==='swap')return`<span class="muted" style="font-size:12px">🔄 ${esc(i.wish||'邻里换物')}</span>`;return`<span class="tag free">免费</span>`;}
+function itemCard(i){
+  const c=catOf(i.cat);
+  const thumb=i.imgs&&i.imgs.length?`<img src="${i.imgs[0]}"/>`:c.emoji;
+  return `<div class="card item-card" data-item="${i.id}">
+    <div class="item-thumb">${thumb}</div>
+    <div class="item-info"><div class="t">${esc(i.title)}</div>
+      <div style="margin:6px 0">${dealTag(i)} <span class="tag gray">${esc(i.cond)}</span></div>
+      <div class="meta"><span>${priceHtml(i)}</span>
+        <span style="margin-left:auto">${esc(i.owner?.building||'')}栋 · ${timeAgo(i.created_at)}</span></div></div></div>`;
+}
+
+/* ================= 发布 ================= */
+let pub={deal:'bid',cat:'digital',imgs:[]};
+async function viewPublish(){
+  const catPick=CATS.map(c=>`<div class="thumb-pick ${pub.cat===c.id?'on':''}" data-pcat="${c.id}">${c.emoji}</div>`).join('');
+  const dealBtn=(v,t)=>`<div class="thumb-pick" style="width:auto;flex:1;font-size:14px;font-weight:600;padding:12px;${pub.deal===v?'':'background:#f6f7f7'}" data-deal="${v}">${t}</div>`;
+  return `
+  <div class="topbar"><div class="title-wrap"><h1>发布闲置</h1></div></div>
+  <div class="screen"><div class="sec">
+    <div class="field"><label>物品照片</label>
+      <div class="thumbs">
+        ${pub.imgs.map((s,idx)=>`<div class="thumb-pick" style="padding:0;overflow:hidden"><img src="${s}" style="width:100%;height:100%;object-fit:cover;border-radius:10px"/><span data-del="${idx}" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;width:18px;height:18px;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center">×</span></div>`).join('')}
+        <label class="thumb-add">📷<span style="font-size:10px">上传</span><input type="file" accept="image/*" id="pub-file" style="display:none" multiple/></label>
+      </div></div>
+    <div class="field"><label>物品标题</label><input class="input" id="pub-title" placeholder="如：九成新 小米空气净化器"/></div>
+    <div class="field"><label>选择分类</label><div class="thumbs">${catPick}</div></div>
+    <div class="field"><label>成色</label><select id="pub-cond"><option>全新</option><option>九成新</option><option>八成新</option><option>七成新</option><option>其他</option></select></div>
+    <div class="field"><label>交易方式</label><div class="thumbs" style="gap:8px">${dealBtn('bid','💰 出价认领')}${dealBtn('swap','🔄 以物换物')}${dealBtn('free','🎁 免费赠送')}</div></div>
+    <div class="field" id="pub-extra">${pubExtra()}</div>
+    <div class="field"><label>物品描述</label><textarea id="pub-desc" rows="3" placeholder="补充新旧情况、使用时长、自提方式等"></textarea></div>
+    <button class="btn" id="pub-submit">发布到小区</button>
+  </div></div>`;
+}
+function pubExtra(){
+  if(pub.deal==='bid')return`<label>期望价格（元）</label><input class="input" id="pub-price" type="number" placeholder="邻居可在此基础上出价"/>`;
+  if(pub.deal==='swap')return`<label>想换什么</label><input class="input" id="pub-wish" placeholder="如：想换儿童滑板车"/>`;
+  return`<div style="background:var(--green-l);border-radius:12px;padding:12px;color:var(--green-d);font-size:13px">🎁 免费赠送给有需要的邻居，赠人玫瑰手有余香</div>`;
+}
+
+/* ================= 详情 ================= */
+async function openDetail(id){state.detailId=id;state.detail=await api('/api/items/'+id);state.tab='detail';render();}
+async function viewDetail(){
+  const i=state.detail||await api('/api/items/'+state.detailId);
+  const c=catOf(i.cat);const o=i.owner||{};
+  const bigImg=i.imgs&&i.imgs.length?`<img src="${i.imgs[0]}"/>`:c.emoji;
+  let priceBlock='';
+  if(i.deal==='bid')priceBlock=`<div class="price" style="font-size:26px">¥${i.price}<span class="u" style="font-size:13px;color:var(--muted);font-weight:400"> 期望价 · 可出价</span></div>`;
+  else if(i.deal==='swap')priceBlock=`<div style="font-size:16px;font-weight:600;color:#1d4ed8">🔄 想换：${esc(i.wish)}</div>`;
+  else priceBlock=`<div style="font-size:22px;font-weight:700;color:var(--green-d)">🎁 免费赠送</div>`;
+
+  let ownerPanel='';
+  if(i.isMine&&i.offers&&i.offers.length){
+    ownerPanel=`<div class="divider"></div><div class="section-title">📨 收到的意向（${i.offers.length}）</div>`+
+      i.offers.map(of=>{
+        const b=of.bidder||{};
+        const desc=of.type==='bid'?`<span class="price">出价 ¥${of.amount}</span>`:of.type==='swap'?`🔄 用「${esc(of.swap_item)}」交换`:'🎁 想要领取';
+        let act='';
+        if(of.status==='pending')act=`<button class="btn sm" data-accept="${of.id}">接受</button> <button class="btn sm line" data-reject="${of.id}">拒绝</button>`;
+        else if(of.status==='accepted')act=`<span class="tag free">已成交</span>`;
+        else act=`<span class="tag done">已拒绝</span>`;
+        return `<div class="offer"><div class="avatar" style="width:36px;height:36px;font-size:14px">${esc((b.nickname||'邻')[0])}</div>
+          <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">${esc(b.nameMasked||b.nickname)} · ${esc(b.building)}栋${esc(b.unit)}单元 ${b.verified?'<span class="verified">✓</span>':''}</div>
+          <div style="font-size:13px;margin-top:2px">${desc}${of.msg?` · <span class="muted">${esc(of.msg)}</span>`:''}</div></div>
+          <div style="text-align:right;white-space:nowrap">${act}</div></div>`;
+      }).join('');
+  }
+
+  let actbar='';
+  if(i.isMine){
+    actbar=`<div class="actbar"><button class="btn line" data-off="${i.id}" data-st="${i.status}">${i.status==='on'?'下架':i.status==='done'?'已成交':'重新上架'}</button></div>`;
+  }else if(i.status!=='on'){
+    actbar=`<div class="actbar"><button class="btn line" disabled style="opacity:.6">该闲置已${i.status==='done'?'成交':'下架'}</button></div>`;
+  }else if(i.myOffer){
+    const s=i.myOffer.status==='pending'?'意向待邻居确认':i.myOffer.status==='accepted'?'✅ 已达成，去私信约自提':'邻居暂未接受';
+    actbar=`<div class="actbar"><button class="btn line" data-chat="${o.id}">💬 私信</button><button class="btn ghost" disabled>${s}</button></div>`;
+  }else{
+    const main=i.deal==='bid'?`<button class="btn amber" data-bid="${i.id}">💰 出价认领</button>`
+      :i.deal==='swap'?`<button class="btn" data-swap="${i.id}">🔄 发起交换</button>`
+      :`<button class="btn" data-claim="${i.id}">🎁 我要领取</button>`;
+    actbar=`<div class="actbar"><button class="btn line" data-chat="${o.id}">💬 私信</button>${main}</div>`;
+  }
+  return `
+  <div class="topbar"><div class="back-btn" data-back="home">‹</div><div class="title-wrap"><h1>物品详情</h1></div></div>
+  <div class="screen" style="padding-bottom:96px">
+    <div class="detail-img">${bigImg}</div>
+    <div class="sec" style="padding-bottom:6px">
+      ${priceBlock}
+      <div style="font-size:17px;font-weight:600;margin:8px 0;line-height:1.4">${esc(i.title)}</div>
+      <div>${dealTag(i)} <span class="tag gray">${esc(i.cond)}</span> <span class="tag gray">${c.emoji}${c.name}</span></div>
+      <div class="muted" style="font-size:12px;margin-top:10px">👁 ${i.views} 次浏览 · 发布于 ${timeAgo(i.created_at)}</div>
+    </div>
+    <div class="divider"></div>
+    <div class="owner">
+      <div class="avatar">${esc((o.nickname||'邻')[0])}</div>
+      <div style="flex:1"><div style="font-weight:600">${esc(o.nameMasked||o.nickname)} ${o.verified?'<span class="verified">✓ 实名邻居</span>':''}</div>
+      <div class="muted" style="font-size:12px;margin-top:2px">${esc(o.building)}栋${esc(o.unit)}单元 · 信用分 ${o.credit}</div></div>
+      <button class="btn sm ghost" data-reviews="${o.id}">看评价</button>
+    </div>
+    <div class="divider"></div>
+    <div class="sec"><div style="font-size:14px;font-weight:700;margin-bottom:8px">物品描述</div>
+      <div style="font-size:14px;line-height:1.7;color:#374">${esc(i.desc||'暂无描述')}</div></div>
+    ${ownerPanel}
+  </div>${actbar}`;
+}
+
+/* ================= 我发布的 ================= */
+async function viewMyList(){
+  const mine=await api('/api/items/mine');
+  return `
+  <div class="topbar"><div class="title-wrap"><h1>我发布的闲置</h1></div></div>
+  <div class="screen"><div class="sec">
+    ${mine.length?mine.map(i=>{
+      const st=i.status==='on'?'<span class="tag bid">在售</span>':i.status==='done'?'<span class="tag free">已成交</span>':'<span class="tag done">已下架</span>';
+      const c=catOf(i.cat);
+      const thumb=i.imgs&&i.imgs.length?`<img src="${i.imgs[0]}"/>`:c.emoji;
+      return `<div class="card item-card" data-item="${i.id}"><div class="item-thumb">${thumb}</div>
+        <div class="item-info"><div class="t">${esc(i.title)}</div>
+        <div style="margin:6px 0">${st} ${i.offerCount?`<span class="tag swap">${i.offerCount} 条意向</span>`:''}</div>
+        <div class="meta"><span>${priceHtml(i)}</span><span style="margin-left:auto">${timeAgo(i.created_at)}</span></div></div></div>`;
+    }).join(''):'<div class="empty"><div class="big">🧺</div>你还没有发布闲置<br/>点击下方 + 把闲置变现或换物</div>'}
+  </div></div>`;
+}
+
+/* ================= 消息（通知+私信） ================= */
+let msgTab='chat';
+async function viewMsg(){
+  const [ns,convs]=await Promise.all([api('/api/notifications'),api('/api/conversations')]);
+  let body='';
+  if(msgTab==='chat'){
+    body=convs.length?convs.map(cv=>`
+      <div class="msg-row" data-chatpeer="${cv.peer.id}">
+        <div class="avatar" style="width:44px;height:44px">${esc((cv.peer.nickname||'邻')[0])}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center"><b style="font-size:15px">${esc(cv.peer.nameMasked||cv.peer.nickname)}</b>
+            ${cv.peer.verified?'<span class="verified" style="margin-left:6px">✓</span>':''}
+            <span class="muted" style="margin-left:auto;font-size:11px">${timeAgo(cv.last.created_at)}</span></div>
+          <div class="muted" style="font-size:13px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cv.last.content)}</div></div>
+        ${cv.unread?`<span class="badge-dot" style="position:static">${cv.unread}</span>`:''}
+      </div>`).join('')
+      :'<div class="empty"><div class="big">💬</div>暂无私信<br/>在物品详情页点「私信」联系邻居</div>';
+  }else{
+    body=ns.length?ns.map(n=>{
+      const o=n.offer;
+      let title,sub,icon;
+      if(n.kind==='in'){
+        const d=o.type==='bid'?`出价 ¥${o.amount}`:o.type==='swap'?`想用「${esc(o.swap_item)}」交换`:'想领取';
+        icon='📨';title=`${esc(n.bidder?.nameMasked||'邻居')} 对你的「${esc(o.title)}」${d}`;
+        sub=o.status==='pending'?'待你确认 · 点击处理':o.status==='accepted'?'你已接受':'你已拒绝';
+      }else{
+        icon=o.status==='accepted'?'✅':'❌';
+        title=`你对「${esc(o.title)}」的意向${o.status==='accepted'?'已被接受':'被婉拒了'}`;
+        sub=o.status==='accepted'?'去「我的-交易记录」查看自提点并评价':'再看看其他闲置吧';
+      }
+      return `<div class="msg-row" data-item="${n.itemId}"><div class="dot ${n.read?'read':''}"></div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;line-height:1.4">${icon} ${title}</div>
+        <div class="muted" style="font-size:12px;margin-top:3px">${sub} · ${timeAgo(n.t)}</div></div></div>`;
+    }).join(''):'<div class="empty"><div class="big">🔔</div>暂无通知</div>';
+  }
+  return `
+  <div class="topbar"><div class="title-wrap"><h1>消息</h1></div></div>
+  <div style="padding:12px 16px 0"><div class="seg" style="margin-bottom:0">
+    <div class="${msgTab==='chat'?'on':''}" data-mt="chat">私信</div>
+    <div class="${msgTab==='notice'?'on':''}" data-mt="notice">交易通知</div></div></div>
+  <div class="screen">${body}</div>`;
+}
+
+/* ================= 聊天 ================= */
+let chatData=null;
+async function loadChat(){
+  chatData=await api('/api/messages?peer='+state.chatPeer);
+  const box=document.querySelector('.chat-body');
+  if(box){box.innerHTML=chatBubbles();box.scrollTop=box.scrollHeight;}
+}
+function chatBubbles(){
+  if(!chatData)return'';
+  return chatData.messages.map(m=>`<div class="bubble ${m.from_id===state.me.id?'me':'peer'}">${esc(m.content)}</div>`).join('');
+}
+async function viewChat(){
+  chatData=await api('/api/messages?peer='+state.chatPeer);
+  const p=chatData.peer||{};
+  return `
+  <div class="topbar"><div class="back-btn" data-back="msg">‹</div>
+    <div class="title-wrap"><h1>${esc(p.nameMasked||p.nickname||'邻居')} ${p.verified?'✓':''}</h1>
+    <div class="loc">${esc(p.building||'')}栋${esc(p.unit||'')}单元 · 信用分 ${p.credit??''}</div></div></div>
+  <div class="chat-body">${chatBubbles()}</div>
+  <div class="chat-input"><input id="chat-txt" placeholder="友善沟通，约定自提时间地点…" autocomplete="off"/><button id="chat-send">发送</button></div>`;
+}
+
+/* ================= 自提点（小区地图） ================= */
+let ppList=[];
+async function viewPickup(){
+  ppList=await api('/api/pickup-points');
+  return `
+  <div class="topbar"><div class="back-btn" data-back="home">‹</div><div class="title-wrap"><h1>🗺️ 小区自提点</h1></div></div>
+  <div class="screen"><div class="sec">
+    <div class="map-box" style="margin-bottom:14px">${communityMapSvg()}</div>
+    <div class="card">
+      <div class="section-title">自提点列表（${ppList.length}）</div>
+      ${ppList.map((p,idx)=>`<div class="pp-row"><div style="width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${idx+1}</div>
+        <div style="flex:1"><div style="font-weight:600;font-size:14px">${esc(p.name)}</div>
+        <div class="muted" style="font-size:12px;margin-top:2px">${esc(p.descr)}</div></div></div>`).join('')||'<div class="empty">本小区暂未设置自提点</div>'}
+    </div>
+    <p class="muted" style="font-size:11px;margin-top:10px;text-align:center">示意图仅供参考 · 管理后台可维护自提点与实景地图</p>
+  </div></div>`;
+}
+function communityMapSvg(){
+  /* 小区平面示意图（合规：非真实地理底图） */
+  const pts=ppList.slice(0,6);
+  const pos=[[70,150],[190,95],[300,170],[120,60],[260,60],[200,180]];
+  return `<svg viewBox="0 0 360 230" style="width:100%;display:block">
+    <rect width="360" height="230" fill="#eef6f1"/>
+    <rect x="20" y="20" width="320" height="190" rx="12" fill="none" stroke="#bcd9c8" stroke-width="2" stroke-dasharray="6 4"/>
+    <rect x="40" y="40" width="70" height="44" rx="6" fill="#cfe8da"/><text x="75" y="66" font-size="11" text-anchor="middle" fill="#178257">1栋</text>
+    <rect x="140" y="40" width="70" height="44" rx="6" fill="#cfe8da"/><text x="175" y="66" font-size="11" text-anchor="middle" fill="#178257">3栋</text>
+    <rect x="240" y="40" width="70" height="44" rx="6" fill="#cfe8da"/><text x="275" y="66" font-size="11" text-anchor="middle" fill="#178257">5栋</text>
+    <rect x="40" y="120" width="70" height="44" rx="6" fill="#cfe8da"/><text x="75" y="146" font-size="11" text-anchor="middle" fill="#178257">2栋</text>
+    <rect x="240" y="120" width="70" height="44" rx="6" fill="#cfe8da"/><text x="275" y="146" font-size="11" text-anchor="middle" fill="#178257">7栋</text>
+    <circle cx="180" cy="140" r="26" fill="#d9efe3"/><text x="180" y="144" font-size="10" text-anchor="middle" fill="#178257">中心花园</text>
+    <text x="180" y="222" font-size="10" text-anchor="middle" fill="#8aa">小区平面示意图</text>
+    ${pts.map((p,i)=>`<g><circle cx="${pos[i][0]}" cy="${pos[i][1]}" r="11" fill="#20a26a"/><text x="${pos[i][0]}" y="${pos[i][1]+4}" font-size="11" font-weight="bold" text-anchor="middle" fill="#fff">${i+1}</text></g>`).join('')}
+  </svg>`;
+}
+
+/* ================= 交易记录 & 评价 ================= */
+async function viewDeals(){
+  const deals=await api('/api/deals');
+  return `
+  <div class="topbar"><div class="back-btn" data-back="me">‹</div><div class="title-wrap"><h1>交易记录 & 评价</h1></div></div>
+  <div class="screen"><div class="sec">
+    ${deals.length?deals.map(d=>`
+      <div class="card" style="padding:14px 16px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <b style="flex:1;font-size:14px">${esc(d.title)}</b>
+          <span class="tag ${d.role==='seller'?'bid':'swap'}">${d.role==='seller'?'我卖出':'我买入'}</span></div>
+        <div class="muted" style="font-size:12px;margin-top:6px">交易对象：${esc(d.peer?.nameMasked||d.peer?.nickname||'')} · ${timeAgo(d.created_at)}</div>
+        ${d.pickup?`<div style="font-size:12px;margin-top:4px;color:var(--green-d)">📍 自提点：${esc(d.pickup.name)}（${esc(d.pickup.descr)}）</div>`:''}
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+          ${d.myReview?`<span class="tag free">已评价 ${'⭐'.repeat(d.myReview.stars)}</span>`
+            :`<button class="btn sm amber" data-review="${d.id}">⭐ 评价对方</button>`}
+          ${d.peerReview?`<span class="tag gray">对方评我 ${'⭐'.repeat(d.peerReview.stars)}</span>`:''}
+          <button class="btn sm line" data-chatpeer="${d.peer?.id}" style="margin-left:auto">💬 联系</button>
+        </div>
+      </div>`).join(''):'<div class="empty"><div class="big">🤝</div>暂无成交记录</div>'}
+  </div></div>`;
+}
+const R_TAGS=['守时守约','物品与描述一致','沟通友善','价格实在','邻里好评'];
+let rvStars=5,rvTags=new Set();
+function openReview(dealId){
+  rvStars=5;rvTags=new Set();
+  openSheet(`<h3>⭐ 评价这次交易</h3>
+    <div class="stars" id="rv-stars">${[1,2,3,4,5].map(n=>`<span data-s="${n}" class="on">⭐</span>`).join('')}</div>
+    <div class="rtags" id="rv-tags">${R_TAGS.map(t=>`<div class="chip" data-t="${t}">${t}</div>`).join('')}</div>
+    <div class="field"><input class="input" id="rv-comment" placeholder="补充评价（选填）"/></div>
+    <button class="btn" id="rv-ok">提交评价</button>
+    <p class="muted center" style="font-size:11px;margin-top:8px">五星+1信用分 · 三星-1 · 两星以下-3</p>`);
+  const paint=()=>document.querySelectorAll('#rv-stars span').forEach(s=>s.classList.toggle('on',+s.dataset.s<=rvStars));
+  document.querySelectorAll('#rv-stars span').forEach(s=>s.onclick=()=>{rvStars=+s.dataset.s;paint();});
+  document.querySelectorAll('#rv-tags .chip').forEach(c=>c.onclick=()=>{
+    const t=c.dataset.t;rvTags.has(t)?rvTags.delete(t):rvTags.add(t);c.classList.toggle('on');});
+  document.getElementById('rv-ok').onclick=async()=>{
+    await api('/api/deals/'+dealId+'/review','POST',{stars:rvStars,tags:[...rvTags],comment:val('rv-comment')});
+    closeSheet();toast('✅ 评价成功');render();
+  };
+}
+
+/* ================= 我的 ================= */
+async function viewMe(){
+  state.me=await api('/api/me');
+  const u=state.me;
+  const M=(ic,t,act)=>`<div class="menu-item" data-act="${act}"><span style="font-size:19px">${ic}</span>${t}<span class="ar">›</span></div>`;
+  return `
+  <div class="screen" style="padding-bottom:80px">
+    <div class="prof-head"><div class="row">
+      <div class="avatar">${esc((u.name||u.nickname||'邻')[0])}</div>
+      <div><div style="font-size:19px;font-weight:700">${esc(u.name||u.nickname)} ${u.verified?'<span class="verified" style="background:rgba(255,255,255,.25);color:#fff">✓ 实名认证</span>':''}</div>
+      <div style="font-size:12px;opacity:.9;margin-top:4px">📍 ${esc(u.community?.name||'')} · ${esc(u.building)}栋${esc(u.unit)}单元${esc(u.room)}室</div>
+      <div style="font-size:12px;opacity:.9;margin-top:2px">${u.phone?'📱 '+u.phone.slice(0,3)+'****'+u.phone.slice(7):'💚 微信用户'} · 信用分 ${u.credit}${u.avgStars?` · ⭐${u.avgStars}(${u.reviewCount})`:''}</div></div>
+    </div></div>
+    <div class="prof-stats">
+      <div><div class="n">${u.stats.pub}</div><div class="l">已发布</div></div>
+      <div><div class="n">${u.stats.done}</div><div class="l">已成交</div></div>
+      <div><div class="n">${u.stats.offers}</div><div class="l">我的出价</div></div></div>
+    <div class="card menu">
+      ${M('🧾','我发布的闲置','mylist')}${M('🤝','交易记录 & 评价','deals')}${M('🗺️','小区自提点','pickup')}${M('💬','消息私信','msg')}</div>
+    <div class="card menu">
+      ${M('🛡️','实名认证信息','rninfo')}${M('⭐','我收到的评价','myreviews')}${M('📋','平台交易规则','rules')}</div>
+    <div class="sec"><button class="btn line" id="logout" style="color:#e0453a">退出登录</button></div>
+    <div class="center muted" style="font-size:11px;padding:0 0 20px">邻里集 v2 · 真实后端版 🌱</div>
+  </div>`;
+}
+async function showReviews(userId,title){
+  const rs=await api('/api/users/'+userId+'/reviews');
+  openSheet(`<h3>${title}</h3>
+    ${rs.length?rs.map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--line)">
+      <div style="font-size:13px"><b>${esc(r.from?.nameMasked||r.from?.nickname||'邻居')}</b> ${'⭐'.repeat(r.stars)}</div>
+      ${r.tags.length?`<div style="margin-top:4px">${r.tags.map(t=>`<span class="tag free" style="margin-right:4px">${esc(t)}</span>`).join('')}</div>`:''}
+      ${r.comment?`<div class="muted" style="font-size:12px;margin-top:4px">${esc(r.comment)}</div>`:''}
+    </div>`).join(''):'<div class="empty">暂无评价</div>'}`);
+}
+
+/* ================= 事件绑定 ================= */
+function bind(){
+  document.querySelectorAll('[data-tab]').forEach(e=>e.onclick=()=>{
+    if(e.dataset.tab==='publish')pub={deal:'bid',cat:'digital',imgs:[]};
+    state.tab=e.dataset.tab;render();});
+  document.querySelectorAll('[data-goto]').forEach(e=>e.onclick=()=>{state.tab=e.dataset.goto;render();});
+  document.querySelectorAll('[data-back]').forEach(e=>e.onclick=()=>{state.tab=e.dataset.back;render();});
+  document.querySelectorAll('[data-item]').forEach(e=>e.onclick=()=>openDetail(+e.dataset.item));
+  document.querySelectorAll('[data-mt]').forEach(e=>e.onclick=()=>{msgTab=e.dataset.mt;api('/api/notifications/read','POST',{}).catch(()=>{});render();});
+  document.querySelectorAll('[data-chatpeer]').forEach(e=>e.onclick=()=>{state.chatPeer=+e.dataset.chatpeer;state.tab='chat';render();});
+  document.querySelectorAll('[data-act]').forEach(e=>e.onclick=()=>{
+    const a=e.dataset.act;
+    if(['mylist','deals','pickup','msg'].includes(a)){state.tab=a;render();}
+    else if(a==='rninfo')openSheet(`<h3>🛡️ 实名认证信息</h3>
+      <div style="font-size:14px;line-height:2.2;padding:0 6px">
+      姓名：${esc(state.me.name)}<br/>身份证：${esc(state.me.idcard)}<br/>
+      小区：${esc(state.me.community?.name||'')}<br/>住址：${esc(state.me.building)}栋${esc(state.me.unit)}单元${esc(state.me.room)}室<br/>
+      核验通道：OCR识别 + 公安二要素比对 ✓</div>`);
+    else if(a==='myreviews')showReviews(state.me.id,'⭐ 我收到的评价');
+    else if(a==='rules')openSheet(`<h3>📋 平台交易规则</h3>
+      <div style="font-size:13px;line-height:2;color:#456;padding:0 6px">
+      1. 仅限实名认证的本小区住户交易；<br/>2. 支持出价认领、以物换物、免费赠送；<br/>
+      3. 成交后请到小区自提点当面交接；<br/>4. 双方互评，信用分低于60将限制发布；<br/>
+      5. 禁止发布违禁品、活体、处方药等。</div>`);
+  });
+  document.querySelectorAll('[data-cat]').forEach(e=>e.onclick=()=>{state.cat=e.dataset.cat;render();});
+  const kw=document.getElementById('kw');
+  if(kw){kw.onkeydown=e=>{if(e.key==='Enter'){state.kw=kw.value.trim();render();}};}
+  const lo=document.getElementById('logout');
+  if(lo)lo.onclick=()=>{token='';localStorage.removeItem('ll2_token');state.me=null;if(es)es.close();state.tab='auth';render();};
+  if(state.tab==='realname')bindRealname();
+  bindPublish();bindDetail();bindChat();
+  document.querySelectorAll('[data-review]').forEach(e=>e.onclick=()=>openReview(+e.dataset.review));
+  document.querySelectorAll('[data-reviews]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();showReviews(+e.dataset.reviews,'⭐ TA收到的评价');});
+}
+
+function bindPublish(){
+  document.querySelectorAll('[data-deal]').forEach(e=>e.onclick=()=>{pub.deal=e.dataset.deal;
+    const box=document.getElementById('pub-extra');if(box)box.innerHTML=pubExtra();
+    document.querySelectorAll('[data-deal]').forEach(x=>x.style.background=x.dataset.deal===pub.deal?'':'#f6f7f7');});
+  document.querySelectorAll('[data-pcat]').forEach(e=>e.onclick=()=>{pub.cat=e.dataset.pcat;
+    document.querySelectorAll('[data-pcat]').forEach(x=>x.classList.toggle('on',x.dataset.pcat===pub.cat));});
+  const file=document.getElementById('pub-file');
+  if(file)file.onchange=e=>{
+    const fs=[...e.target.files].slice(0,4-pub.imgs.length);let n=fs.length;if(!n)return;
+    fs.forEach(f=>{const r=new FileReader();r.onload=()=>{pub.imgs.push(r.result);if(--n===0)render();};r.readAsDataURL(f);});};
+  document.querySelectorAll('[data-del]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();pub.imgs.splice(+e.dataset.del,1);render();});
+  const sub=document.getElementById('pub-submit');
+  if(sub)sub.onclick=async()=>{
+    await api('/api/items','POST',{title:val('pub-title'),cat:pub.cat,cond:val('pub-cond'),deal:pub.deal,
+      price:+val('pub-price')||0,wish:val('pub-wish'),desc:val('pub-desc'),imgs:pub.imgs});
+    toast('🎉 发布成功，已展示给小区邻居');
+    pub={deal:'bid',cat:'digital',imgs:[]};
+    setTimeout(()=>{state.tab='mylist';render();},700);
+  };
+}
+
+function bindDetail(){
+  const bid=document.querySelector('[data-bid]');
+  if(bid)bid.onclick=()=>{const i=state.detail;
+    openSheet(`<h3>💰 出价认领</h3>
+      <div class="field"><label>你的出价（元）· 卖家期望 ¥${i.price}</label><input class="input" id="of-amt" type="number" placeholder="输入你愿意支付的价格"/></div>
+      <div class="field"><label>留言（选填）</label><input class="input" id="of-msg" placeholder="如：随时可自提，诚心购买"/></div>
+      <button class="btn amber" id="of-ok">确认出价</button>`);
+    document.getElementById('of-ok').onclick=()=>sendOffer(i.id,{type:'bid',amount:+val('of-amt'),msg:val('of-msg')});};
+  const swap=document.querySelector('[data-swap]');
+  if(swap)swap.onclick=()=>{const i=state.detail;
+    openSheet(`<h3>🔄 发起交换</h3>
+      <div style="background:var(--blue-l);border-radius:10px;padding:10px 12px;font-size:13px;color:#1d4ed8;margin-bottom:14px">对方想换：${esc(i.wish||'邻里换物')}</div>
+      <div class="field"><label>你用来交换的物品</label><input class="input" id="of-item" placeholder="如：闲置儿童滑板车 九成新"/></div>
+      <div class="field"><label>留言（选填）</label><input class="input" id="of-msg"/></div>
+      <button class="btn" id="of-ok">发送交换请求</button>`);
+    document.getElementById('of-ok').onclick=()=>sendOffer(i.id,{type:'swap',swap_item:val('of-item'),msg:val('of-msg')});};
+  const claim=document.querySelector('[data-claim]');
+  if(claim)claim.onclick=()=>{const i=state.detail;
+    openSheet(`<h3>🎁 我要领取</h3>
+      <div class="field"><label>给邻居留言</label><input class="input" id="of-msg" placeholder="如：真的很需要，谢谢您！"/></div>
+      <button class="btn" id="of-ok">确认领取意向</button>`);
+    document.getElementById('of-ok').onclick=()=>sendOffer(i.id,{type:'free',msg:val('of-msg')});};
+
+  /* 卖家接受：先选自提点 */
+  document.querySelectorAll('[data-accept]').forEach(e=>e.onclick=async()=>{
+    const pps=await api('/api/pickup-points');
+    let sel=pps[0]?.id;
+    openSheet(`<h3>✅ 接受意向 · 选择自提点</h3>
+      <div class="card" style="box-shadow:none;border:1px solid var(--line);margin-bottom:14px">
+        ${pps.map(p=>`<div class="pp-row ${p.id===sel?'sel':''}" data-pp="${p.id}">
+          <span style="font-size:18px">📍</span>
+          <div style="flex:1"><div style="font-weight:600;font-size:14px">${esc(p.name)}</div>
+          <div class="muted" style="font-size:12px">${esc(p.descr)}</div></div></div>`).join('')||'<div class="empty" style="padding:20px">暂无自提点，可直接成交后私信约定</div>'}
+      </div>
+      <button class="btn" id="acc-ok">确认成交</button>`);
+    document.querySelectorAll('[data-pp]').forEach(r=>r.onclick=()=>{sel=+r.dataset.pp;
+      document.querySelectorAll('[data-pp]').forEach(x=>x.classList.toggle('sel',+x.dataset.pp===sel));});
+    document.getElementById('acc-ok').onclick=async()=>{
+      await api('/api/offers/'+e.dataset.accept+'/accept','POST',{pickup_point_id:sel});
+      closeSheet();toast('🤝 已成交！自提点已通知对方');openDetail(state.detailId);};
+  });
+  document.querySelectorAll('[data-reject]').forEach(e=>e.onclick=async()=>{
+    await api('/api/offers/'+e.dataset.reject+'/reject','POST',{});toast('已拒绝该意向');openDetail(state.detailId);});
+  const off=document.querySelector('[data-off]');
+  if(off)off.onclick=async()=>{
+    if(off.dataset.st==='done')return toast('已成交的物品无需操作');
+    await api('/api/items/'+off.dataset.off+'/status','POST',{status:off.dataset.st==='on'?'off':'on'});
+    toast(off.dataset.st==='on'?'已下架':'已重新上架');openDetail(state.detailId);};
+  document.querySelectorAll('[data-chat]').forEach(e=>e.onclick=()=>{state.chatPeer=+e.dataset.chat;state.tab='chat';render();});
+}
+async function sendOffer(itemId,data){
+  if(data.type==='bid'&&!data.amount)return toast('请输入出价金额');
+  if(data.type==='swap'&&!data.swap_item)return toast('请填写交换物品');
+  await api('/api/items/'+itemId+'/offers','POST',data);
+  closeSheet();toast('✅ 已发送，等待邻居确认');openDetail(itemId);
+}
+function bindChat(){
+  const send=document.getElementById('chat-send');
+  if(!send)return;
+  const box=document.querySelector('.chat-body');if(box)box.scrollTop=box.scrollHeight;
+  const doSend=async()=>{
+    const t=val('chat-txt');if(!t)return;
+    document.getElementById('chat-txt').value='';
+    await api('/api/messages','POST',{to:state.chatPeer,content:t});
+    loadChat();};
+  send.onclick=doSend;
+  document.getElementById('chat-txt').onkeydown=e=>{if(e.key==='Enter')doSend();};
+}
+
+/* ================= 启动 ================= */
+if(token){state.tab='home';connectSSE();}
+render();
+</script>
+</body>
+</html>

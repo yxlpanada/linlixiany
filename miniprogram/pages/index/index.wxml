@@ -1,0 +1,29 @@
+<view class="top">
+  <input class="search" placeholder="搜搜邻居家的闲置" value="{{kw}}" bindinput="onKw" confirm-type="search" bindconfirm="doSearch"/>
+  <view class="fab" bindtap="goPublish">＋</view>
+</view>
+
+<scroll-view class="cats" scroll-x>
+  <view class="cat {{cat==='all'?'on':''}}" data-c="all" bindtap="pickCat">全部</view>
+  <view wx:for="{{cats}}" wx:key="id" class="cat {{cat===item.id?'on':''}}" data-c="{{item.id}}" bindtap="pickCat">{{item.emoji}} {{item.name}}</view>
+</scroll-view>
+
+<view wx:if="{{loading}}" class="empty">加载中…</view>
+<view wx:elif="{{items.length===0}}" class="empty">这个小区还没有闲置，去发布第一件吧～</view>
+
+<view wx:for="{{items}}" wx:key="id" class="card item" data-id="{{item.id}}" bindtap="openDetail">
+  <image wx:if="{{item.cover}}" class="cover" src="{{item.cover}}" mode="aspectFill"/>
+  <view class="info">
+    <view class="title">{{item.title}}</view>
+    <view class="meta">
+      <text class="tag cat">{{item.emoji}} {{item.catName}}</text>
+      <text class="tag {{item.deal}}">{{item.dealEmoji}} {{item.dealName}}</text>
+    </view>
+    <view class="bottom">
+      <text class="price" wx:if="{{item.deal==='bid'}}">¥{{item.price}}</text>
+      <text class="price" wx:elif="{{item.deal==='swap'}}">换：{{item.want}}</text>
+      <text class="price" wx:else>免费送</text>
+      <text class="muted">{{item.building}}栋 · {{item.time}}</text>
+    </view>
+  </view>
+</view>

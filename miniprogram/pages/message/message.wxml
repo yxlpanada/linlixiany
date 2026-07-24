@@ -1,0 +1,11 @@
+<view class="card conv" wx:for="{{list}}" wx:key="peer" data-peer="{{item.peer.id}}" data-item="{{item.last.item_id || ''}}" bindtap="open">
+  <view class="avatar">🧑</view>
+  <view class="info">
+    <view class="flex between"><text class="title">{{item.name}}</text><text class="muted">{{item.time}}</text></view>
+    <view class="flex between">
+      <text class="muted ellipsis">{{item.last}}</text>
+      <text class="badge" wx:if="{{item.unread>0}}">{{item.unread}}</text>
+    </view>
+  </view>
+</view>
+<view wx:if="{{list.length===0}}" class="empty">还没有消息，去首页逛逛吧～</view>

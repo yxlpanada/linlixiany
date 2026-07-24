@@ -1,0 +1,10 @@
+.profile { display: flex; align-items: center; gap: 20rpx; background: #07c160; padding: 40rpx 32rpx; color: #fff; }
+.profile .avatar { width: 96rpx; height: 96rpx; border-radius: 50%; background: rgba(255,255,255,.25); text-align: center; line-height: 96rpx; font-size: 48rpx; }
+.pinfo { flex: 1; }
+.pinfo .title { font-size: 34rpx; font-weight: 600; }
+.pinfo .muted { color: rgba(255,255,255,.85); font-size: 24rpx; margin-top: 6rpx; }
+.mi { display: flex; align-items: center; gap: 16rpx; padding: 18rpx 0; border-bottom: 1rpx solid #eef0f2; }
+.mi-cover { width: 96rpx; height: 96rpx; border-radius: 10rpx; background: #eee; }
+.mi-info { flex: 1; }
+.dl { padding: 18rpx 0; border-bottom: 1rpx solid #eef0f2; }
+.sm { padding: 10rpx 22rpx; font-size: 24rpx; margin: 0; }

@@ -1,0 +1,10 @@
+<view class="chat">
+  <view wx:for="{{msgs}}" wx:key="id" class="row {{item.mine?'me':''}}">
+    <view class="bubble">{{item.content}}</view>
+  </view>
+  <view class="bottom"></view>
+</view>
+<view class="bar">
+  <input class="input" placeholder="输入消息" value="{{input}}" bindinput="onInput" confirm-type="send" bindconfirm="send"/>
+  <button class="btn sm" bindtap="send">发送</button>
+</view>

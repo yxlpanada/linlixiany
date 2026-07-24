@@ -1,0 +1,37 @@
+<view class="profile" wx:if="{{me}}">
+  <view class="avatar">🧑</view>
+  <view class="pinfo">
+    <view class="title">{{me.nickname}}</view>
+    <view class="muted">{{me.verified ? '✅ 已实名' : '⚠️ 未实名'}} · 信用分 {{me.credit_score}}</view>
+    <view class="muted" wx:if="{{me.community_name}}">{{me.building}}栋{{me.unit}}单元{{me.room}}室</view>
+  </view>
+  <button wx:if="{{!me.verified}}" class="btn sm" bindtap="goRealname">去实名</button>
+</view>
+
+<view class="card">
+  <view class="title">我发布的（{{mine.length}}）</view>
+  <view wx:for="{{mine}}" wx:key="id" class="mi">
+    <image wx:if="{{item.cover}}" class="mi-cover" src="{{item.cover}}"/>
+    <view class="mi-info">
+      <view>{{item.title}}</view>
+      <view class="muted">{{item.dealName}} · {{item.time}}</view>
+    </view>
+    <button class="btn ghost sm" data-id="{{item.id}}" data-st="{{item.status}}" bindtap="toggle">{{item.status==='on'?'下架':'上架'}}</button>
+  </view>
+  <view wx:if="{{mine.length===0}}" class="muted">还没有发布，去首页发布闲置吧</view>
+</view>
+
+<view class="card">
+  <view class="title">我的成交（{{deals.length}}）</view>
+  <view wx:for="{{deals}}" wx:key="id" class="dl">
+    <view class="flex between">
+      <text>{{item.title}} · {{item.role==='seller'?'我卖出':'我买入'}}</text>
+      <button wx:if="{{!item.myReview}}" class="btn sm" data-id="{{item.id}}" bindtap="review">评价</button>
+      <text wx:else class="muted">已评价</text>
+    </view>
+    <view class="muted" wx:if="{{item.pickup}}">自提点：{{item.pickup.name}}</view>
+  </view>
+  <view wx:if="{{deals.length===0}}" class="muted">还没有成交记录</view>
+</view>
+
+<view class="card"><button class="btn ghost" bindtap="logout">退出登录</button></view>

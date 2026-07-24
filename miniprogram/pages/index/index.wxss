@@ -1,0 +1,13 @@
+.top { display: flex; align-items: center; gap: 16rpx; padding: 20rpx 24rpx 8rpx; background: #07c160; }
+.search { flex: 1; background: #fff; border-radius: 999rpx; padding: 16rpx 28rpx; font-size: 28rpx; }
+.fab { width: 72rpx; height: 72rpx; border-radius: 50%; background: #fff; color: #07c160; font-size: 48rpx; text-align: center; line-height: 68rpx; }
+.cats { white-space: nowrap; padding: 16rpx 20rpx; background: #07c160; }
+.cat { display: inline-block; color: rgba(255,255,255,.8); font-size: 26rpx; padding: 8rpx 22rpx; margin-right: 12rpx; }
+.cat.on { color: #07c160; background: #fff; border-radius: 999rpx; font-weight: 600; }
+.empty { text-align: center; color: #9aa0a6; padding: 120rpx 0; font-size: 28rpx; }
+.item { display: flex; gap: 20rpx; }
+.cover { width: 160rpx; height: 160rpx; border-radius: 14rpx; background: #eee; flex-shrink: 0; }
+.info { flex: 1; display: flex; flex-direction: column; }
+.item .title { font-size: 30rpx; margin-bottom: 10rpx; }
+.meta { margin-bottom: auto; }
+.bottom { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10rpx; }

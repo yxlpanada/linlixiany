@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>邻里集 · 自提点实景地图</title>
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+        #map { width: 100%; height: 100vh; }
+        .panel { position: absolute; top: 14px; left: 14px; z-index: 10; background: #fff; border-radius: 14px;
+            box-shadow: 0 8px 26px rgba(0,0,0,.14); padding: 14px 16px; width: 280px; }
+        .panel h1 { font-size: 15px; margin: 0 0 4px; color: #178257; }
+        .panel .sub { font-size: 12px; color: #6b7a80; margin-bottom: 10px; }
+        .pt { display: flex; gap: 8px; padding: 8px 0; border-top: 1px solid #eee; font-size: 13px; cursor: pointer; }
+        .pt .n { width: 20px; height: 20px; border-radius: 50%; background: #20a26a; color: #fff; text-align: center; line-height: 20px; font-size: 11px; flex-shrink: 0; }
+        .pt .d { color: #999; font-size: 11px; margin-top: 2px; }
+        .err { color: #b45309; font-size: 12px; padding: 8px 0; }
+    </style>
+    <!-- 1. 配置代理（密钥代理模式，前端零 key） -->
+    <script type="text/javascript">
+        window._TMapSecurityConfig = {
+            serviceHost: 'http://127.0.0.1:__WB_HTTP_PORT__/_TMapService/_wbt/__WB_TMAP_SECRET__',
+        };
+    </script>
+    <!-- 2. 官方 CDN 加载 SDK，不带 key 参数 -->
+    <script src="https://map.qq.com/api/gljs?v=1.exp"></script>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="panel">
+        <h1>📍 自提点实景地图</h1>
+        <div class="sub" id="sub">加载中…</div>
+        <div id="list"></div>
+    </div>
+    <script>
+        const API = new URLSearchParams(location.search).get('api') || window.__API_BASE__ || '';
+        const qs = new URLSearchParams(location.search);
+        const cid = qs.get('community_id') || 1;
+
+        const map = new TMap.Map('map', {
+            zoom: 16,
+            center: new TMap.LatLng(39.9841, 116.3075),
+        });
+
+        fetch(API + '/api/public/pickup-points?community_id=' + cid)
+            .then(r => r.json())
+            .then(({ data }) => {
+                const { community, points } = data;
+                document.getElementById('sub').textContent = (community ? community.name + ' · ' : '') + points.length + ' 个自提点（GCJ-02）';
+                const pts = points.filter(p => p.lat && p.lng);
+                if (community && community.lat) map.setCenter(new TMap.LatLng(community.lat, community.lng));
+
+                const markerIcon = 'data:image/svg+xml,' + encodeURIComponent(
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="44" viewBox="0 0 34 44"><path d="M17 0C7.6 0 0 7.6 0 17c0 12.75 17 27 17 27s17-14.25 17-27C34 7.6 26.4 0 17 0z" fill="#20a26a"/><circle cx="17" cy="16" r="7" fill="#fff"/></svg>');
+
+                if (pts.length) {
+                    new TMap.MultiMarker({
+                        map,
+                        styles: { pp: new TMap.MarkerStyle({ width: 34, height: 44, anchor: { x: 17, y: 44 }, src: markerIcon }) },
+                        geometries: pts.map((p, i) => ({ id: String(p.id), styleId: 'pp', position: new TMap.LatLng(p.lat, p.lng) })),
+                    });
+                    new TMap.MultiLabel({
+                        map,
+                        styles: { lb: new TMap.LabelStyle({ color: '#178257', size: 13, offset: { x: 0, y: 6 } }) },
+                        geometries: pts.map(p => ({ id: 'l' + p.id, styleId: 'lb', position: new TMap.LatLng(p.lat, p.lng), content: p.name })),
+                    });
+                }
+                document.getElementById('list').innerHTML = points.map((p, i) =>
+                    '<div class="pt" data-i="' + i + '"><div class="n">' + (i + 1) + '</div><div><b>' + p.name + '</b><div class="d">' + (p.descr || '') + (p.lat ? '' : ' · 未配置坐标') + '</div></div></div>').join('');
+                document.querySelectorAll('.pt').forEach(el => el.onclick = () => {
+                    const p = points[+el.dataset.i];
+                    if (p.lat) { map.setCenter(new TMap.LatLng(p.lat, p.lng)); map.setZoom(18); }
+                });
+            })
+            .catch(() => {
+                document.getElementById('sub').innerHTML = '<span class="err">⚠️ 未能连接邻里集后端（请先启动 http://127.0.0.1:3399）</span>';
+            });
+    </script>
+</body>
+</html>

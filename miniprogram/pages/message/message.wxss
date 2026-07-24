@@ -1,0 +1,6 @@
+.conv { display: flex; align-items: center; gap: 20rpx; padding: 24rpx; }
+.avatar { width: 88rpx; height: 88rpx; border-radius: 50%; background: #eef2f5; text-align: center; line-height: 88rpx; font-size: 44rpx; }
+.info { flex: 1; min-width: 0; }
+.ellipsis { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 460rpx; }
+.badge { background: #ff5000; color: #fff; font-size: 22rpx; border-radius: 999rpx; padding: 2rpx 12rpx; min-width: 32rpx; text-align: center; }
+.empty { text-align: center; color: #9aa0a6; padding: 120rpx 0; font-size: 28rpx; }

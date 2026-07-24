@@ -1,0 +1,27 @@
+<view class="card">
+  <input class="input" placeholder="标题，如：九成新婴儿推车" value="{{title}}" bindinput="onTitle"/>
+  <view class="row">
+    <picker mode="selector" range="{{CATS}}" range-key="name" bindchange="pickCat">
+      <view class="sel">分类：{{CATS[catIdx].emoji}} {{CATS[catIdx].name}}</view>
+    </picker>
+    <picker mode="selector" range="{{CONDS}}" range-key="name" bindchange="pickCond">
+      <view class="sel">成色：{{CONDS[condIdx].name}}</view>
+    </picker>
+  </view>
+
+  <view class="deals">
+    <view wx:for="{{DEALS}}" wx:key="id" class="deal {{deal===item.id?'on':''}}" data-d="{{item.id}}" bindtap="pickDeal">{{item.emoji}} {{item.name}}</view>
+  </view>
+  <input wx:if="{{deal==='bid'}}" class="input" type="number" placeholder="期望价格（元）" value="{{price}}" bindinput="onPrice"/>
+  <input wx:if="{{deal==='swap'}}" class="input" placeholder="想换什么，如：儿童自行车" value="{{want}}" bindinput="onWant"/>
+  <textarea wx:if="{{deal==='free'}}" class="input" placeholder="描述一下物品情况（选填）" value="{{desc}}" bindinput="onDesc"/>
+
+  <view class="imgs">
+    <view wx:for="{{images}}" wx:key="*this" class="img" data-i="{{index}}" bindtap="delImg">
+      <image src="{{item}}" mode="aspectFill"/><text class="del">×</text>
+    </view>
+    <view class="img add" bindtap="chooseImg" wx:if="{{images.length<6}}">＋</view>
+  </view>
+
+  <button class="btn" loading="{{submitting}}" bindtap="submit">发布闲置</button>
+</view>

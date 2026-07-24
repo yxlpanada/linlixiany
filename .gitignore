@@ -1,0 +1,8 @@
+# 项目私有 / 本地数据，不进仓库
+.workbuddy/
+*.db
+*.db-wal
+*.db-shm
+.env
+node_modules/
+.DS_Store

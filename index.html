@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>邻里集 · 小区闲置交换平台</title>
+<style>
+  :root{
+    --green:#20a26a; --green-d:#178257; --green-l:#e7f6ee;
+    --amber:#f59e0b; --amber-l:#fef3e2;
+    --blue:#3b82f6; --blue-l:#e8f1fe;
+    --pink:#ec4899;
+    --bg:#f3f5f4; --card:#ffffff;
+    --ink:#1f2a2e; --muted:#6b7a80; --line:#eceeed;
+    --shadow:0 6px 22px rgba(20,40,30,.08);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:#dfe4e2;color:var(--ink);
+    display:flex;justify-content:center;align-items:center;min-height:100vh;
+  }
+  /* phone frame */
+  #app{
+    width:100%;max-width:430px;height:100vh;max-height:920px;
+    background:var(--bg);position:relative;overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.22);border-radius:26px;
+    display:flex;flex-direction:column;
+  }
+  @media (max-width:460px){#app{border-radius:0;max-height:none;height:100vh}}
+
+  /* topbar */
+  .topbar{
+    background:linear-gradient(135deg,var(--green),#27b579);
+    color:#fff;padding:14px 18px 12px;flex-shrink:0;
+    display:flex;align-items:center;gap:10px;position:relative;z-index:5;
+  }
+  .topbar .loc{font-size:12px;opacity:.9;display:flex;align-items:center;gap:4px}
+  .topbar h1{font-size:17px;font-weight:700;margin-top:2px}
+  .topbar .title-wrap{flex:1}
+  .topbar .icon-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.18);
+    display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+  .back-btn{cursor:pointer;font-size:20px;line-height:1;padding-right:4px}
+
+  /* scroll area */
+  .screen{flex:1;overflow-y:auto;padding-bottom:80px;-webkit-overflow-scrolling:touch}
+  .screen::-webkit-scrollbar{width:0}
+
+  /* bottom nav */
+  .tabbar{
+    position:absolute;left:0;right:0;bottom:0;height:64px;background:#fff;
+    border-top:1px solid var(--line);display:flex;z-index:10;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    color:var(--muted);font-size:11px;cursor:pointer;position:relative}
+  .tab.active{color:var(--green)}
+  .tab .ic{font-size:21px;line-height:1}
+  .tab .pub{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--green),#2bbd7f);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;margin-top:-22px;
+    box-shadow:0 6px 16px rgba(32,162,106,.4);font-weight:300}
+  .badge-dot{position:absolute;top:8px;right:calc(50% - 16px);min-width:16px;height:16px;padding:0 4px;
+    background:#ef4444;color:#fff;border-radius:8px;font-size:10px;line-height:16px;text-align:center}
+
+  /* common */
+  .sec{padding:14px 16px}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .btn{display:block;width:100%;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;
+    cursor:pointer;background:var(--green);color:#fff;transition:.15s}
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:var(--green-l);color:var(--green-d)}
+  .btn.amber{background:var(--amber)}
+  .btn.line{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+  .btn.sm{padding:9px 14px;font-size:13px;width:auto;border-radius:10px;display:inline-block}
+  .input,select,textarea{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;
+    font-size:15px;background:#fafbfb;color:var(--ink);font-family:inherit;outline:none;transition:.15s}
+  .input:focus,select:focus,textarea:focus{border-color:var(--green);background:#fff}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .row2{display:flex;gap:10px}
+  .row2>*{flex:1}
+  .tag{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+  .tag.bid{background:var(--amber-l);color:#b45309}
+  .tag.swap{background:var(--blue-l);color:#1d4ed8}
+  .tag.free{background:var(--green-l);color:var(--green-d)}
+  .tag.done{background:#eee;color:#666}
+  .muted{color:var(--muted)}
+  .center{text-align:center}
+  .empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:14px}
+  .empty .big{font-size:44px;margin-bottom:10px}
+
+  /* auth */
+  .auth-wrap{padding:0;height:100%;display:flex;flex-direction:column;
+    background:linear-gradient(160deg,#20a26a 0%,#27b579 40%,#f3f5f4 40%)}
+  .auth-head{padding:56px 28px 30px;color:#fff}
+  .auth-head .logo{font-size:40px}
+  .auth-head h2{font-size:26px;margin-top:10px}
+  .auth-head p{opacity:.92;margin-top:6px;font-size:13px}
+  .auth-card{margin:0 20px;background:#fff;border-radius:20px;padding:24px 20px;box-shadow:var(--shadow);
+    flex:1;overflow-y:auto}
+  .seg{display:flex;background:#f0f2f1;border-radius:12px;padding:4px;margin-bottom:20px}
+  .seg div{flex:1;text-align:center;padding:9px;border-radius:9px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer}
+  .seg div.on{background:#fff;color:var(--green-d);box-shadow:0 2px 6px rgba(0,0,0,.06)}
+
+  /* item card */
+  .item-card{display:flex;gap:12px;padding:12px;margin-bottom:12px;cursor:pointer}
+  .item-thumb{width:92px;height:92px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;
+    justify-content:center;font-size:44px;background:var(--green-l);overflow:hidden}
+  .item-thumb img{width:100%;height:100%;object-fit:cover}
+  .item-info{flex:1;min-width:0;display:flex;flex-direction:column}
+  .item-info .t{font-size:15px;font-weight:600;line-height:1.3;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .item-info .meta{font-size:11px;color:var(--muted);margin-top:auto;display:flex;align-items:center;gap:6px}
+  .price{color:#e0453a;font-weight:700}
+  .price .u{font-size:11px}
+  .cats{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px}
+  .cats::-webkit-scrollbar{height:0}
+  .chip{white-space:nowrap;font-size:13px;padding:7px 14px;border-radius:20px;background:#fff;
+    border:1.5px solid var(--line);color:var(--muted);cursor:pointer;flex-shrink:0}
+  .chip.on{background:var(--green);color:#fff;border-color:var(--green)}
+  .search{margin:12px 16px 0;display:flex;align-items:center;gap:8px;background:#fff;border-radius:24px;
+    padding:10px 16px;box-shadow:var(--shadow)}
+  .search input{border:none;background:none;outline:none;flex:1;font-size:14px}
+
+  /* detail */
+  .detail-img{width:100%;height:300px;background:var(--green-l);display:flex;align-items:center;
+    justify-content:center;font-size:120px}
+  .detail-img img{width:100%;height:100%;object-fit:cover}
+  .owner{display:flex;align-items:center;gap:10px;padding:14px 16px}
+  .avatar{width:42px;height:42px;border-radius:50%;background:var(--green);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex-shrink:0}
+  .verified{font-size:10px;color:var(--green);background:var(--green-l);padding:2px 6px;border-radius:6px;font-weight:600}
+  .actbar{position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);
+    padding:12px 16px;display:flex;gap:10px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+  .actbar .btn{flex:1}
+
+  /* offer list */
+  .offer{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
+  .offer:last-child{border-bottom:none}
+
+  /* profile */
+  .prof-head{background:linear-gradient(135deg,var(--green),#27b579);padding:24px 20px 40px;color:#fff}
+  .prof-head .row{display:flex;align-items:center;gap:14px}
+  .prof-head .avatar{width:60px;height:60px;font-size:24px;background:rgba(255,255,255,.25)}
+  .prof-stats{display:flex;background:#fff;margin:-24px 16px 0;border-radius:16px;box-shadow:var(--shadow);padding:16px 0}
+  .prof-stats div{flex:1;text-align:center;border-right:1px solid var(--line)}
+  .prof-stats div:last-child{border:none}
+  .prof-stats .n{font-size:20px;font-weight:700;color:var(--green-d)}
+  .prof-stats .l{font-size:11px;color:var(--muted);margin-top:3px}
+  .menu{margin:14px 16px}
+  .menu-item{display:flex;align-items:center;gap:12px;padding:15px 16px;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px}
+  .menu-item:last-child{border:none}
+  .menu-item .ic{font-size:19px}
+  .menu-item .ar{margin-left:auto;color:#ccc}
+
+  /* notification / message */
+  .msg{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .msg .dot{width:9px;height:9px;border-radius:50%;background:#ef4444;flex-shrink:0;margin-top:6px}
+  .msg .dot.read{background:transparent}
+
+  /* modal */
+  .mask{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;align-items:flex-end;
+    animation:fade .2s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .sheet{background:#fff;width:100%;border-radius:22px 22px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));
+    animation:up .25s}
+  @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .sheet h3{font-size:17px;margin-bottom:16px;text-align:center}
+  .toast{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.8);
+    color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;z-index:99;animation:fade .2s;max-width:80%;text-align:center}
+
+  .thumbs{display:flex;gap:8px;flex-wrap:wrap}
+  .thumb-add{width:70px;height:70px;border-radius:12px;border:1.5px dashed var(--line);display:flex;
+    align-items:center;justify-content:center;flex-direction:column;color:var(--muted);font-size:24px;cursor:pointer;background:#fafbfb}
+  .thumb-pick{width:70px;height:70px;border-radius:12px;background:var(--green-l);display:flex;
+    align-items:center;justify-content:center;font-size:34px;cursor:pointer;position:relative;border:2px solid transparent}
+  .thumb-pick.on{border-color:var(--green)}
+  .divider{height:8px;background:var(--bg)}
+  .section-title{font-size:14px;font-weight:700;padding:14px 16px 8px;display:flex;align-items:center;gap:6px}
+  .list-head{padding:12px 16px 4px;font-size:13px;color:var(--muted);font-weight:600}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============================ 数据层 ============================ */
+const CATS = [
+  {id:'digital',name:'数码电器',emoji:'📱'},
+  {id:'home',name:'家居日用',emoji:'🛋️'},
+  {id:'kids',name:'母婴儿童',emoji:'🧸'},
+  {id:'book',name:'图书文具',emoji:'📚'},
+  {id:'cloth',name:'服饰鞋包',emoji:'👗'},
+  {id:'kitchen',name:'厨房用品',emoji:'🍳'},
+  {id:'sport',name:'运动户外',emoji:'⚽'},
+  {id:'plant',name:'绿植花艺',emoji:'🪴'},
+  {id:'other',name:'其他',emoji:'📦'},
+];
+const catOf = id => CATS.find(c=>c.id===id)||CATS[8];
+
+const store = {
+  get(k,d){try{return JSON.parse(localStorage.getItem('ll_'+k))??d}catch(e){return d}},
+  set(k,v){localStorage.setItem('ll_'+k,JSON.stringify(v))},
+};
+let DB = {
+  users: store.get('users',[]),
+  items: store.get('items',[]),
+  offers: store.get('offers',[]),
+  cur: store.get('cur',null),
+};
+function save(){store.set('users',DB.users);store.set('items',DB.items);store.set('offers',DB.offers);store.set('cur',DB.cur);}
+const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const me = ()=>DB.users.find(u=>u.id===DB.cur);
+const timeAgo = t=>{const s=(Date.now()-t)/1000;if(s<60)return'刚刚';if(s<3600)return Math.floor(s/60)+'分钟前';if(s<86400)return Math.floor(s/3600)+'小时前';return Math.floor(s/86400)+'天前';};
+const maskName = n=>n?n[0]+'*'.repeat(Math.max(1,n.length-1)):'邻居';
+
+/* ---------- 种子数据（首次访问） ---------- */
+function seed(){
+  if(DB.users.length) return;
+  const community='阳光花园小区';
+  const u1={id:uid(),phone:'13800000001',pwd:'123456',name:'王芳',idcard:'110101198809091234',verified:true,community,building:'3',unit:'2',room:'1502',avatar:'',credit:98,joined:Date.now()-1000*3600*24*120};
+  const u2={id:uid(),phone:'13800000002',pwd:'123456',name:'李强',idcard:'110101199203031234',verified:true,community,building:'7',unit:'1',room:'0803',avatar:'',credit:95,joined:Date.now()-1000*3600*24*80};
+  const u3={id:uid(),phone:'13800000003',pwd:'123456',name:'陈晨',idcard:'110101199511111234',verified:true,community,building:'1',unit:'3',room:'2201',avatar:'',credit:100,joined:Date.now()-1000*3600*24*30};
+  DB.users.push(u1,u2,u3);
+  const mk=(o)=>DB.items.push(Object.assign({id:uid(),imgs:[],status:'on',views:Math.floor(Math.random()*200)+20,createdAt:Date.now()-Math.floor(Math.random()*1000*3600*72)},o));
+  mk({ownerId:u1.id,title:'九成新 小米空气净化器 Pro',cat:'digital',cond:'九成新',deal:'bid',price:280,desc:'搬家用不上了，滤芯刚换过，除甲醛效果好，楼下自提。'});
+  mk({ownerId:u2.id,title:'宜家实木婴儿床（含床垫）',cat:'kids',cond:'八成新',deal:'swap',price:0,wish:'想换儿童滑板车或平衡车',desc:'宝宝大了用不上，结实无异味，需自提，7栋1单元。'});
+  mk({ownerId:u3.id,title:'全新未拆封 保温饭盒',cat:'kitchen',cond:'全新',deal:'free',price:0,desc:'重复购买了，免费送给需要的邻居，先到先得～'});
+  mk({ownerId:u1.id,title:'村上春树小说合集 8本',cat:'book',cond:'九成新',deal:'bid',price:45,desc:'看完闲置，无笔记无破损，打包出。'});
+  mk({ownerId:u2.id,title:'迪卡侬 折叠自行车',cat:'sport',cond:'七成新',deal:'swap',price:0,wish:'想换跑步机或哑铃套装',desc:'骑行几次，链条已保养，可小区内当面验车。'});
+  mk({ownerId:u3.id,title:'龟背竹大盆栽 带花盆',cat:'plant',cond:'九成新',deal:'bid',price:60,desc:'长太大搬不动了，叶片油亮，喜光好养。'});
+  DB.cur=null;
+  save();
+}
+seed();
+
+/* ============================ 视图状态 ============================ */
+let state={tab:'home',cat:'all',kw:'',detailId:null,profileTab:'pub'};
+const $app=document.getElementById('app');
+function go(tab){state.tab=tab;render();}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;$app.appendChild(t);setTimeout(()=>t.remove(),1600);}
+let sheetEl=null;
+function openSheet(html){closeSheet();const m=document.createElement('div');m.className='mask';m.innerHTML=`<div class="sheet">${html}</div>`;m.onclick=e=>{if(e.target===m)closeSheet();};$app.appendChild(m);sheetEl=m;}
+function closeSheet(){if(sheetEl){sheetEl.remove();sheetEl=null;}}
+
+/* ============================ 渲染入口 ============================ */
+function render(){
+  if(!DB.cur){renderAuth();return;}
+  let body='';
+  if(state.tab==='home')body=viewHome();
+  else if(state.tab==='publish')body=viewPublish();
+  else if(state.tab==='msg')body=viewMsg();
+  else if(state.tab==='me')body=viewMe();
+  else if(state.tab==='detail')body=viewDetail();
+  else if(state.tab==='mylist')body=viewMyList();
+  $app.innerHTML=body+tabbar();
+  bind();
+}
+
+/* ---------- 底部导航 ---------- */
+function tabbar(){
+  if(['detail'].includes(state.tab))return'';
+  const unread=DB.offers.filter(o=>{
+    const it=DB.items.find(i=>i.id===o.itemId);
+    return it&&it.ownerId===DB.cur&&o.status==='pending'&&!o.readByOwner;
+  }).length + DB.offers.filter(o=>o.bidderId===DB.cur&&o.status!=='pending'&&!o.readByBidder).length;
+  const T=(id,ic,label)=>`<div class="tab ${state.tab===id?'active':''}" data-tab="${id}"><div class="ic">${ic}</div>${label}</div>`;
+  return `<div class="tabbar">
+    ${T('home','🏠','首页')}
+    ${T('mylist','🧾','我发布')}
+    <div class="tab" data-tab="publish"><div class="pub">+</div></div>
+    <div class="tab ${state.tab==='msg'?'active':''}" data-tab="msg"><div class="ic">💬</div>消息${unread?`<span class="badge-dot">${unread}</span>`:''}</div>
+    ${T('me','👤','我的')}
+  </div>`;
+}
+
+/* ============================ 注册 / 登录 ============================ */
+let authMode='login';
+function renderAuth(){
+  $app.innerHTML=`
+  <div class="auth-wrap">
+    <div class="auth-head">
+      <div class="logo">🏘️</div>
+      <h2>邻里集</h2>
+      <p>小区闲置，就近流转 · 实名邻居，安心交易</p>
+    </div>
+    <div class="auth-card">
+      <div class="seg">
+        <div class="${authMode==='login'?'on':''}" data-m="login">登录</div>
+        <div class="${authMode==='reg'?'on':''}" data-m="reg">注册</div>
+      </div>
+      <div id="authForm">${authMode==='login'?loginForm():regForm()}</div>
+    </div>
+  </div>`;
+  document.querySelectorAll('.seg div').forEach(d=>d.onclick=()=>{authMode=d.dataset.m;renderAuth();});
+  bindAuth();
+}
+function loginForm(){
+  return `
+  <div class="field"><label>手机号</label><input class="input" id="lg-phone" placeholder="请输入手机号" value="13800000001"/></div>
+  <div class="field"><label>密码</label><input class="input" id="lg-pwd" type="password" placeholder="请输入密码" value="123456"/></div>
+  <button class="btn" id="lg-btn" style="margin-top:8px">登录</button>
+  <p class="muted center" style="font-size:12px;margin-top:14px">体验账号已预填，直接登录即可</p>`;
+}
+function regForm(){
+  const opts=(n,pre)=>Array.from({length:n},(_,i)=>`<option>${pre+(i+1)}</option>`).join('');
+  return `
+  <div class="field"><label>手机号</label><input class="input" id="rg-phone" placeholder="接收验证码的手机号"/></div>
+  <div class="field"><label>设置密码</label><input class="input" id="rg-pwd" type="password" placeholder="6位以上"/></div>
+  <div style="background:var(--green-l);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:700;color:var(--green-d);margin-bottom:2px">🛡️ 实名认证</div>
+    <div style="font-size:11px;color:var(--green-d);opacity:.85">仅本小区实名住户可入驻，保障邻里交易安全</div>
+  </div>
+  <div class="field"><label>真实姓名</label><input class="input" id="rg-name" placeholder="与身份证一致"/></div>
+  <div class="field"><label>身份证号</label><input class="input" id="rg-id" placeholder="18位身份证号" maxlength="18"/></div>
+  <div class="field"><label>所在小区</label>
+    <select id="rg-com"><option>阳光花园小区</option><option>翠湖名邸</option><option>幸福里社区</option></select></div>
+  <div class="row2">
+    <div class="field"><label>楼栋</label><select id="rg-b">${opts(20,'')}</select></div>
+    <div class="field"><label>单元</label><select id="rg-u">${opts(6,'')}</select></div>
+    <div class="field"><label>房号</label><input class="input" id="rg-r" placeholder="如 1502"/></div>
+  </div>
+  <button class="btn" id="rg-btn" style="margin-top:4px">提交认证并注册</button>`;
+}
+function bindAuth(){
+  const lg=document.getElementById('lg-btn');
+  if(lg)lg.onclick=()=>{
+    const p=val('lg-phone'),pw=val('lg-pwd');
+    const u=DB.users.find(x=>x.phone===p&&x.pwd===pw);
+    if(!u)return toast('手机号或密码错误');
+    DB.cur=u.id;save();state.tab='home';render();
+  };
+  const rg=document.getElementById('rg-btn');
+  if(rg)rg.onclick=()=>{
+    const phone=val('rg-phone'),pwd=val('rg-pwd'),name=val('rg-name'),id=val('rg-id');
+    if(!/^1\d{10}$/.test(phone))return toast('请输入正确的手机号');
+    if(pwd.length<6)return toast('密码至少6位');
+    if(!name)return toast('请填写真实姓名');
+    if(!/^\d{17}[\dXx]$/.test(id))return toast('身份证号格式不正确');
+    if(DB.users.some(u=>u.phone===phone))return toast('该手机号已注册');
+    if(DB.users.some(u=>u.idcard===id))return toast('该身份证已认证');
+    if(!val('rg-r'))return toast('请填写房号');
+    const u={id:uid(),phone,pwd,name,idcard:id,verified:true,
+      community:val('rg-com'),building:val('rg-b'),unit:val('rg-u'),room:val('rg-r'),
+      avatar:'',credit:100,joined:Date.now()};
+    DB.users.push(u);DB.cur=u.id;save();
+    toast('✅ 实名认证通过，欢迎加入！');
+    setTimeout(()=>{state.tab='home';render();},900);
+  };
+}
+const val=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
+
+/* ============================ 首页 ============================ */
+function viewHome(){
+  const u=me();
+  let items=DB.items.filter(i=>i.status==='on');
+  if(state.cat!=='all')items=items.filter(i=>i.cat===state.cat);
+  if(state.kw)items=items.filter(i=>i.title.includes(state.kw)||i.desc.includes(state.kw));
+  items.sort((a,b)=>b.createdAt-a.createdAt);
+  const chips=[`<div class="chip ${state.cat==='all'?'on':''}" data-cat="all">全部</div>`]
+    .concat(CATS.map(c=>`<div class="chip ${state.cat===c.id?'on':''}" data-cat="${c.id}">${c.emoji} ${c.name}</div>`)).join('');
+  return `
+  <div class="topbar">
+    <div class="title-wrap">
+      <div class="loc">📍 ${u.community} · ${u.building}栋</div>
+      <h1>邻里集市</h1>
+    </div>
+    <div class="icon-btn" data-tab="msg">💬</div>
+  </div>
+  <div class="screen">
+    <div class="search"><span>🔍</span><input id="kw" placeholder="搜索闲置物品" value="${state.kw}"/></div>
+    <div class="cats">${chips}</div>
+    <div class="sec">
+      ${items.length?items.map(itemCard).join(''):'<div class="empty"><div class="big">📭</div>还没有符合条件的闲置<br/>点击下方 + 发布你的第一件闲置</div>'}
+    </div>
+  </div>`;
+}
+function dealTag(i){
+  if(i.deal==='bid')return `<span class="tag bid">💰 出价认领</span>`;
+  if(i.deal==='swap')return `<span class="tag swap">🔄 以物换物</span>`;
+  return `<span class="tag free">🎁 免费赠送</span>`;
+}
+function priceHtml(i){
+  if(i.deal==='bid')return `<span class="price"><span class="u">期望 ¥</span>${i.price}</span>`;
+  if(i.deal==='swap')return `<span class="muted" style="font-size:12px">🔄 ${i.wish||'邻里换物'}</span>`;
+  return `<span class="tag free">免费</span>`;
+}
+function itemCard(i){
+  const owner=DB.users.find(u=>u.id===i.ownerId)||{};
+  const c=catOf(i.cat);
+  const thumb=i.imgs&&i.imgs.length?`<img src="${i.imgs[0]}"/>`:c.emoji;
+  return `<div class="card item-card" data-item="${i.id}">
+    <div class="item-thumb">${thumb}</div>
+    <div class="item-info">
+      <div class="t">${i.title}</div>
+      <div style="margin:6px 0">${dealTag(i)} <span class="tag" style="background:#f1f3f2;color:#788">${i.cond}</span></div>
+      <div class="meta">
+        <span>${priceHtml(i)}</span>
+        <span style="margin-left:auto">${owner.building}栋 · ${timeAgo(i.createdAt)}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================ 发布 ============================ */
+let pub={deal:'bid',cat:'digital',emoji:'📱',imgs:[]};
+function viewPublish(){
+  const catPick=CATS.map(c=>`<div class="thumb-pick ${pub.cat===c.id?'on':''}" data-pcat="${c.id}" data-emoji="${c.emoji}">${c.emoji}</div>`).join('');
+  const dealBtn=(v,t)=>`<div class="thumb-pick" style="width:auto;flex:1;font-size:14px;font-weight:600;padding:12px;${pub.deal===v?'':'background:#f6f7f7'}" data-deal="${v}">${t}</div>`;
+  return `
+  <div class="topbar"><div class="title-wrap"><h1>发布闲置</h1></div></div>
+  <div class="screen">
+    <div class="sec">
+      <div class="field">
+        <label>物品照片</label>
+        <div class="thumbs" id="pub-thumbs">
+          ${pub.imgs.map((s,idx)=>`<div class="thumb-pick" style="padding:0;overflow:hidden"><img src="${s}" style="width:100%;height:100%;object-fit:cover;border-radius:10px"/><span data-del="${idx}" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;width:18px;height:18px;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center">×</span></div>`).join('')}
+          <label class="thumb-add">📷<span style="font-size:10px">上传</span><input type="file" accept="image/*" id="pub-file" style="display:none" multiple/></label>
+        </div>
+        <div class="muted" style="font-size:11px;margin-top:6px">未上传照片时将使用分类图标展示</div>
+      </div>
+      <div class="field"><label>物品标题</label><input class="input" id="pub-title" placeholder="如：九成新 小米空气净化器"/></div>
+      <div class="field"><label>选择分类</label><div class="thumbs">${catPick}</div></div>
+      <div class="field"><label>成色</label>
+        <select id="pub-cond"><option>全新</option><option>九成新</option><option>八成新</option><option>七成新</option><option>其他</option></select></div>
+      <div class="field"><label>交易方式</label>
+        <div class="thumbs" style="gap:8px">${dealBtn('bid','💰 出价认领')}${dealBtn('swap','🔄 以物换物')}${dealBtn('free','🎁 免费赠送')}</div>
+      </div>
+      <div class="field" id="pub-extra">${pubExtra()}</div>
+      <div class="field"><label>物品描述</label><textarea id="pub-desc" rows="3" placeholder="补充新旧情况、使用时长、自提方式等"></textarea></div>
+      <button class="btn" id="pub-submit">发布到小区</button>
+    </div>
+  </div>`;
+}
+function pubExtra(){
+  if(pub.deal==='bid')return `<label>期望价格（元）</label><input class="input" id="pub-price" type="number" placeholder="邻居可在此基础上出价"/>`;
+  if(pub.deal==='swap')return `<label>想换什么</label><input class="input" id="pub-wish" placeholder="如：想换儿童滑板车"/>`;
+  return `<div style="background:var(--green-l);border-radius:12px;padding:12px;color:var(--green-d);font-size:13px">🎁 免费赠送给有需要的邻居，赠人玫瑰手有余香</div>`;
+}
+
+/* ============================ 物品详情 ============================ */
+function viewDetail(){
+  const i=DB.items.find(x=>x.id===state.detailId);
+  if(!i)return viewHome();
+  const owner=DB.users.find(u=>u.id===i.ownerId)||{};
+  const c=catOf(i.cat);
+  const isMine=i.ownerId===DB.cur;
+  const bigImg=i.imgs&&i.imgs.length?`<img src="${i.imgs[0]}"/>`:c.emoji;
+  const offers=DB.offers.filter(o=>o.itemId===i.id).sort((a,b)=>b.createdAt-a.createdAt);
+  const myOffer=offers.find(o=>o.bidderId===DB.cur);
+
+  let priceBlock='';
+  if(i.deal==='bid')priceBlock=`<div class="price" style="font-size:26px">¥${i.price}<span class="u" style="font-size:13px;color:var(--muted);font-weight:400"> 期望价 · 可出价</span></div>`;
+  else if(i.deal==='swap')priceBlock=`<div style="font-size:16px;font-weight:600;color:#1d4ed8">🔄 想换：${i.wish||'邻里换物'}</div>`;
+  else priceBlock=`<div style="font-size:22px;font-weight:700;color:var(--green-d)">🎁 免费赠送</div>`;
+
+  let ownerPanel='';
+  if(isMine && offers.length){
+    ownerPanel=`<div class="divider"></div><div class="section-title">📨 收到的意向（${offers.length}）</div>`+
+      offers.map(o=>{
+        const b=DB.users.find(u=>u.id===o.bidderId)||{};
+        const desc=o.type==='bid'?`<span class="price">出价 ¥${o.amount}</span>`:`🔄 用「${o.swapItem}」交换`;
+        let act='';
+        if(o.status==='pending')act=`<button class="btn sm" data-accept="${o.id}">接受</button> <button class="btn sm line" data-reject="${o.id}">拒绝</button>`;
+        else if(o.status==='accepted')act=`<span class="tag free">已成交</span>`;
+        else act=`<span class="tag done">已拒绝</span>`;
+        return `<div class="offer"><div class="avatar" style="width:36px;height:36px;font-size:14px">${(b.name||'邻')[0]}</div>
+          <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">${maskName(b.name)} · ${b.building}栋${b.unit}单元</div>
+          <div style="font-size:13px;margin-top:2px">${desc}${o.msg?` · <span class="muted">${o.msg}</span>`:''}</div></div>
+          <div style="text-align:right;white-space:nowrap">${act}</div></div>`;
+      }).join('');
+  }
+
+  let actbar='';
+  if(isMine){
+    actbar=`<div class="actbar">
+      <button class="btn line" data-off="${i.id}">${i.status==='on'?'下架':'已完成'}</button>
+      <button class="btn" data-share>分享给邻居</button></div>`;
+  }else if(i.status!=='on'){
+    actbar=`<div class="actbar"><button class="btn line" disabled style="opacity:.6">该闲置已${i.status==='done'?'成交':'下架'}</button></div>`;
+  }else if(myOffer){
+    const s=myOffer.status==='pending'?'意向待邻居确认':myOffer.status==='accepted'?'✅ 已达成，请线下联系':'邻居暂未接受';
+    actbar=`<div class="actbar"><button class="btn ghost" disabled>${s}</button></div>`;
+  }else{
+    if(i.deal==='bid')actbar=`<div class="actbar"><button class="btn line" data-chat="${owner.id}">私信</button><button class="btn amber" data-bid="${i.id}">💰 出价认领</button></div>`;
+    else if(i.deal==='swap')actbar=`<div class="actbar"><button class="btn line" data-chat="${owner.id}">私信</button><button class="btn" data-swap="${i.id}">🔄 发起交换</button></div>`;
+    else actbar=`<div class="actbar"><button class="btn line" data-chat="${owner.id}">私信</button><button class="btn" data-claim="${i.id}">🎁 我要领取</button></div>`;
+  }
+
+  return `
+  <div class="topbar"><div class="back-btn" data-back>‹</div><div class="title-wrap"><h1>物品详情</h1></div></div>
+  <div class="screen" style="padding-bottom:90px">
+    <div class="detail-img">${bigImg}</div>
+    <div class="sec" style="padding-bottom:6px">
+      ${priceBlock}
+      <div style="font-size:17px;font-weight:600;margin:8px 0;line-height:1.4">${i.title}</div>
+      <div>${dealTag(i)} <span class="tag" style="background:#f1f3f2;color:#788">${i.cond}</span> <span class="tag" style="background:#f1f3f2;color:#788">${c.emoji}${c.name}</span></div>
+      <div class="muted" style="font-size:12px;margin-top:10px">👁 ${i.views} 次浏览 · 发布于 ${timeAgo(i.createdAt)}</div>
+    </div>
+    <div class="divider"></div>
+    <div class="owner">
+      <div class="avatar">${(owner.name||'邻')[0]}</div>
+      <div style="flex:1"><div style="font-weight:600">${maskName(owner.name)} ${owner.verified?'<span class="verified">✓ 实名邻居</span>':''}</div>
+      <div class="muted" style="font-size:12px;margin-top:2px">${owner.community} · ${owner.building}栋${owner.unit}单元 · 信用分 ${owner.credit}</div></div>
+    </div>
+    <div class="divider"></div>
+    <div class="sec"><div style="font-size:14px;font-weight:700;margin-bottom:8px">物品描述</div>
+      <div style="font-size:14px;line-height:1.7;color:#374">${i.desc||'暂无描述'}</div></div>
+    ${ownerPanel}
+  </div>
+  ${actbar}`;
+}
+
+/* ============================ 我发布的 ============================ */
+function viewMyList(){
+  const mine=DB.items.filter(i=>i.ownerId===DB.cur).sort((a,b)=>b.createdAt-a.createdAt);
+  return `
+  <div class="topbar"><div class="title-wrap"><h1>我发布的闲置</h1></div></div>
+  <div class="screen"><div class="sec">
+    ${mine.length?mine.map(i=>{
+      const st=i.status==='on'?'<span class="tag bid">在售</span>':i.status==='done'?'<span class="tag free">已成交</span>':'<span class="tag done">已下架</span>';
+      const oc=DB.offers.filter(o=>o.itemId===i.id).length;
+      const c=catOf(i.cat);
+      const thumb=i.imgs&&i.imgs.length?`<img src="${i.imgs[0]}"/>`:c.emoji;
+      return `<div class="card item-card" data-item="${i.id}"><div class="item-thumb">${thumb}</div>
+        <div class="item-info"><div class="t">${i.title}</div>
+        <div style="margin:6px 0">${st} ${oc?`<span class="tag swap">${oc} 条意向</span>`:''}</div>
+        <div class="meta"><span>${priceHtml(i)}</span><span style="margin-left:auto">${timeAgo(i.createdAt)}</span></div></div></div>`;
+    }).join(''):'<div class="empty"><div class="big">🧺</div>你还没有发布闲置<br/>点击下方 + 把闲置变现或换物</div>'}
+  </div></div>`;
+}
+
+/* ============================ 消息 ============================ */
+function viewMsg(){
+  const list=[];
+  // 我物品上收到的意向
+  DB.offers.forEach(o=>{
+    const it=DB.items.find(i=>i.id===o.itemId);if(!it)return;
+    if(it.ownerId===DB.cur){
+      const b=DB.users.find(u=>u.id===o.bidderId)||{};
+      const d=o.type==='bid'?`出价 ¥${o.amount}`:`想用「${o.swapItem}」交换`;
+      list.push({t:o.createdAt,read:o.readByOwner,icon:'📨',
+        title:`${maskName(b.name)} 对你的「${it.title}」${d}`,
+        sub:o.status==='pending'?'待你确认 · 点击处理':o.status==='accepted'?'你已接受':'你已拒绝',
+        itemId:it.id});
+    }
+    if(o.bidderId===DB.cur&&o.status!=='pending'){
+      list.push({t:o.updatedAt||o.createdAt,read:o.readByBidder,icon:o.status==='accepted'?'✅':'❌',
+        title:`你对「${it.title}」的意向${o.status==='accepted'?'已被接受':'被婉拒了'}`,
+        sub:o.status==='accepted'?'请线下联系邻居完成交易':'再看看其他闲置吧',itemId:it.id});
+    }
+  });
+  list.sort((a,b)=>b.t-a.t);
+  return `
+  <div class="topbar"><div class="title-wrap"><h1>消息通知</h1></div></div>
+  <div class="screen">
+    ${list.length?list.map(m=>`<div class="msg" data-item="${m.itemId}">
+      <div class="dot ${m.read?'read':''}"></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600;line-height:1.4">${m.icon} ${m.title}</div>
+      <div class="muted" style="font-size:12px;margin-top:3px">${m.sub} · ${timeAgo(m.t)}</div></div></div>`).join('')
+    :'<div class="empty"><div class="big">💬</div>暂无消息<br/>发布或参与交易后会在这里收到通知</div>'}
+  </div>`;
+}
+
+/* ============================ 我的 ============================ */
+function viewMe(){
+  const u=me();
+  const pubCount=DB.items.filter(i=>i.ownerId===DB.cur).length;
+  const doneCount=DB.items.filter(i=>i.ownerId===DB.cur&&i.status==='done').length;
+  const offerCount=DB.offers.filter(o=>o.bidderId===DB.cur).length;
+  const M=(ic,t,tab)=>`<div class="menu-item" ${tab?`data-tab="${tab}"`:''}><span class="ic">${ic}</span>${t}<span class="ar">›</span></div>`;
+  return `
+  <div class="screen" style="padding-bottom:80px">
+    <div class="prof-head">
+      <div class="row"><div class="avatar">${u.name[0]}</div>
+        <div><div style="font-size:19px;font-weight:700">${u.name} ${u.verified?'<span class="verified" style="background:rgba(255,255,255,.25);color:#fff">✓ 实名认证</span>':''}</div>
+        <div style="font-size:12px;opacity:.9;margin-top:4px">📍 ${u.community} · ${u.building}栋${u.unit}单元${u.room}室</div>
+        <div style="font-size:12px;opacity:.9;margin-top:2px">📱 ${u.phone.slice(0,3)}****${u.phone.slice(7)} · 信用分 ${u.credit}</div></div>
+      </div>
+    </div>
+    <div class="prof-stats">
+      <div><div class="n">${pubCount}</div><div class="l">已发布</div></div>
+      <div><div class="n">${doneCount}</div><div class="l">已成交</div></div>
+      <div><div class="n">${offerCount}</div><div class="l">我的出价</div></div>
+    </div>
+    <div class="card menu">
+      ${M('🧾','我发布的闲置','mylist')}
+      ${M('💰','我的出价 / 换物','msg')}
+      ${M('💬','消息通知','msg')}
+    </div>
+    <div class="card menu">
+      ${M('🛡️','实名认证信息')}
+      ${M('⭐','我的信用分')}
+      ${M('📋','平台交易规则')}
+      ${M('⚙️','设置')}
+    </div>
+    <div class="sec"><button class="btn line" id="logout" style="color:#e0453a">退出登录</button></div>
+    <div class="center muted" style="font-size:11px;padding:0 0 20px">邻里集 · 让闲置在小区流动起来 🌱</div>
+  </div>`;
+}
+
+/* ============================ 事件绑定 ============================ */
+function bind(){
+  // tabbar
+  document.querySelectorAll('[data-tab]').forEach(e=>e.onclick=()=>{
+    const t=e.dataset.tab;
+    if(t==='publish'){pub={deal:'bid',cat:'digital',emoji:'📱',imgs:[]};}
+    if(t==='mylist')state.tab='mylist';
+    go(t);
+  });
+  // 详情
+  document.querySelectorAll('[data-item]').forEach(e=>e.onclick=()=>{
+    const it=DB.items.find(i=>i.id===e.dataset.item);
+    if(it){it.views++;save();}
+    // 标记消息已读
+    DB.offers.forEach(o=>{if(o.itemId===e.dataset.item){const item=DB.items.find(i=>i.id===o.itemId);if(item&&item.ownerId===DB.cur)o.readByOwner=true;if(o.bidderId===DB.cur)o.readByBidder=true;}});
+    save();
+    state.detailId=e.dataset.item;state.tab='detail';render();
+  });
+  const back=document.querySelector('[data-back]');if(back)back.onclick=()=>{state.tab='home';render();};
+
+  // 首页搜索/分类
+  document.querySelectorAll('[data-cat]').forEach(e=>e.onclick=()=>{state.cat=e.dataset.cat;render();});
+  const kw=document.getElementById('kw');if(kw)kw.oninput=()=>{state.kw=kw.value.trim();};
+  if(kw)kw.onkeydown=e=>{if(e.key==='Enter')render();};
+
+  // 发布交互
+  bindPublish();
+
+  // 详情操作
+  bindDetail();
+
+  // 退出
+  const lo=document.getElementById('logout');if(lo)lo.onclick=()=>{DB.cur=null;save();render();};
+}
+
+function bindPublish(){
+  document.querySelectorAll('[data-deal]').forEach(e=>e.onclick=()=>{pub.deal=e.dataset.deal;
+    const box=document.getElementById('pub-extra');if(box)box.innerHTML=pubExtra();
+    document.querySelectorAll('[data-deal]').forEach(x=>x.style.background=x.dataset.deal===pub.deal?'':'#f6f7f7');
+  });
+  document.querySelectorAll('[data-pcat]').forEach(e=>e.onclick=()=>{pub.cat=e.dataset.pcat;pub.emoji=e.dataset.emoji;
+    document.querySelectorAll('[data-pcat]').forEach(x=>x.classList.toggle('on',x.dataset.pcat===pub.cat));
+  });
+  const file=document.getElementById('pub-file');
+  if(file)file.onchange=e=>{
+    const fs=[...e.target.files].slice(0,4-pub.imgs.length);
+    let n=fs.length;if(!n)return;
+    fs.forEach(f=>{const r=new FileReader();r.onload=()=>{pub.imgs.push(r.result);if(--n===0)refreshThumbs();};r.readAsDataURL(f);});
+  };
+  document.querySelectorAll('[data-del]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();pub.imgs.splice(+e.dataset.del,1);refreshThumbs();});
+  const sub=document.getElementById('pub-submit');
+  if(sub)sub.onclick=()=>{
+    const title=val('pub-title');if(!title)return toast('请填写物品标题');
+    const it={id:uid(),ownerId:DB.cur,title,cat:pub.cat,cond:val('pub-cond'),deal:pub.deal,
+      price:pub.deal==='bid'?(+val('pub-price')||0):0,wish:pub.deal==='swap'?val('pub-wish'):'',
+      desc:val('pub-desc'),imgs:pub.imgs.slice(),status:'on',views:0,createdAt:Date.now()};
+    if(it.deal==='bid'&&!it.price)return toast('请填写期望价格');
+    if(it.deal==='swap'&&!it.wish)return toast('请填写想换的物品');
+    DB.items.unshift(it);save();
+    toast('🎉 发布成功，已展示给小区邻居');
+    pub={deal:'bid',cat:'digital',emoji:'📱',imgs:[]};
+    setTimeout(()=>{state.tab='mylist';render();},800);
+  };
+}
+function refreshThumbs(){if(state.tab==='publish'){render();}}
+
+function bindDetail(){
+  // 买家：出价
+  const bid=document.querySelector('[data-bid]');
+  if(bid)bid.onclick=()=>{const i=DB.items.find(x=>x.id===bid.dataset.bid);
+    openSheet(`<h3>💰 出价认领</h3>
+      <div class="field"><label>你的出价（元）· 卖家期望 ¥${i.price}</label><input class="input" id="of-amt" type="number" placeholder="输入你愿意支付的价格"/></div>
+      <div class="field"><label>留言（选填）</label><input class="input" id="of-msg" placeholder="如：随时可自提，诚心购买"/></div>
+      <button class="btn amber" id="of-ok">确认出价</button>`);
+    document.getElementById('of-ok').onclick=()=>{
+      const amt=+val('of-amt');if(!amt)return toast('请输入出价金额');
+      makeOffer(i,{type:'bid',amount:amt,msg:val('of-msg')});
+    };
+  };
+  // 买家：交换
+  const swap=document.querySelector('[data-swap]');
+  if(swap)swap.onclick=()=>{const i=DB.items.find(x=>x.id===swap.dataset.swap);
+    openSheet(`<h3>🔄 发起交换</h3>
+      <div style="background:var(--blue-l);border-radius:10px;padding:10px 12px;font-size:13px;color:#1d4ed8;margin-bottom:14px">对方想换：${i.wish||'邻里换物'}</div>
+      <div class="field"><label>你用来交换的物品</label><input class="input" id="of-item" placeholder="如：闲置儿童滑板车 九成新"/></div>
+      <div class="field"><label>留言（选填）</label><input class="input" id="of-msg" placeholder="补充说明你的物品情况"/></div>
+      <button class="btn" id="of-ok">发送交换请求</button>`);
+    document.getElementById('of-ok').onclick=()=>{
+      const item=val('of-item');if(!item)return toast('请填写交换物品');
+      makeOffer(i,{type:'swap',swapItem:item,msg:val('of-msg')});
+    };
+  };
+  // 买家：领取
+  const claim=document.querySelector('[data-claim]');
+  if(claim)claim.onclick=()=>{const i=DB.items.find(x=>x.id===claim.dataset.claim);
+    openSheet(`<h3>🎁 我要领取</h3>
+      <div class="field"><label>给邻居留言</label><input class="input" id="of-msg" placeholder="如：真的很需要，谢谢您！"/></div>
+      <button class="btn" id="of-ok">确认领取意向</button>`);
+    document.getElementById('of-ok').onclick=()=>makeOffer(i,{type:'free',amount:0,msg:val('of-msg')});
+  };
+  // 卖家：接受/拒绝
+  document.querySelectorAll('[data-accept]').forEach(e=>e.onclick=()=>{
+    const o=DB.offers.find(x=>x.id===e.dataset.accept);o.status='accepted';o.updatedAt=Date.now();o.readByBidder=false;
+    const it=DB.items.find(i=>i.id===o.itemId);it.status='done';
+    DB.offers.filter(x=>x.itemId===it.id&&x.status==='pending').forEach(x=>{x.status='rejected';x.updatedAt=Date.now();x.readByBidder=false;});
+    save();toast('✅ 已接受，物品标记为成交');render();
+  });
+  document.querySelectorAll('[data-reject]').forEach(e=>e.onclick=()=>{
+    const o=DB.offers.find(x=>x.id===e.dataset.reject);o.status='rejected';o.updatedAt=Date.now();o.readByBidder=false;save();toast('已拒绝该意向');render();
+  });
+  // 卖家：下架
+  const off=document.querySelector('[data-off]');
+  if(off)off.onclick=()=>{const i=DB.items.find(x=>x.id===off.dataset.off);
+    if(i.status==='done')return toast('已成交的物品无需操作');
+    i.status=i.status==='on'?'off':'on';save();toast(i.status==='on'?'已重新上架':'已下架');render();};
+  const sh=document.querySelector('[data-share]');if(sh)sh.onclick=()=>toast('🔗 已复制小区分享链接');
+  document.querySelectorAll('[data-chat]').forEach(e=>e.onclick=()=>toast('💬 私信功能演示中，可直接出价/换物沟通'));
+}
+
+function makeOffer(item,data){
+  if(DB.offers.some(o=>o.itemId===item.id&&o.bidderId===DB.cur&&o.status==='pending'))return toast('你已提交过意向，请等待邻居确认');
+  DB.offers.push(Object.assign({id:uid(),itemId:item.id,bidderId:DB.cur,status:'pending',
+    readByOwner:false,readByBidder:true,createdAt:Date.now()},data));
+  save();closeSheet();
+  toast('✅ 已发送，等待邻居确认');
+  setTimeout(()=>{state.tab='detail';render();},600);
+}
+
+/* 启动 */
+render();
+</script>
+</body>
+</html>
